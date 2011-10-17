@@ -7,9 +7,9 @@ from the 1und1 company in Germany.
 
 Installation
 =============
-Change into your django-shop directory and clone this module from github::
+Clone this module from github::
 
-    git clone git@github.com:jrief/django-shop-ipayment.git ipayment
+    git clone git@github.com:jrief/django-shop-ipayment.git
 
 In settings.py, add ipayment to INSTALLED_APPS and add 'ipayment.offsite_backend.OffsiteIPaymentBackend'
 to django-SHOP's SHOP_PAYMENT_BACKENDS setting.
