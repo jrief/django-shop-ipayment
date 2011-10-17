@@ -6,12 +6,14 @@ from django.conf import settings
 from django.conf.urls.defaults import patterns, url
 from django.contrib.sites.models import get_current_site
 from django.core.urlresolvers import reverse
+from django.core.exceptions import SuspiciousOperation
 from django.shortcuts import render_to_response
 from django.template import Context, Template, RequestContext
-from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseForbidden
+from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseServerError
 from django.views.decorators.csrf import csrf_exempt
 
 import logging
+import traceback
 import forms
 
 class OffsiteIPaymentBackend(object):
@@ -95,30 +97,32 @@ class OffsiteIPaymentBackend(object):
         '''
         if request.method != 'POST':
             return HttpResponseBadRequest()
-        # assert that this request is not forged 
-        if request.META['REMOTE_ADDR'] == '127.0.0.1' and self.ALLOWED_CONFIRMERS.count(request.META['HTTP_X_FORWARDED_FOR']) == 0 or self.ALLOWED_CONFIRMERS.count(request.META['REMOTE_ADDR']) == 0:
-            return HttpResponseForbidden()
-        post = request.POST.copy()
-        if post.has_key('trx_amount'):
-            post['trx_amount'] = float(post['trx_amount'])/100.0
-        if post.has_key('ret_transdate') and post.has_key('ret_transtime'):
-            post['ret_transdatetime'] = datetime.strptime(post['ret_transdate']+" "+post['ret_transtime'], "%d.%m.%y %H:%M:%S")
-        confirmation = forms.ConfirmationForm(post)
-        if confirmation.is_valid():
-            # check for manipulated data
+        try:
+            # assert that this request is not forged 
+            if request.META['REMOTE_ADDR'] == '127.0.0.1' and self.ALLOWED_CONFIRMERS.count(request.META['HTTP_X_FORWARDED_FOR']) == 0 or self.ALLOWED_CONFIRMERS.count(request.META['REMOTE_ADDR']) == 0:
+                raise SuspiciousOperation('Request invoked from suspicious IP address %s' % request.META['REMOTE_ADDR'])
+            post = request.POST.copy()
+            if post.has_key('trx_amount'):
+                post['trx_amount'] = float(post['trx_amount'])/100.0
+            if post.has_key('ret_transdate') and post.has_key('ret_transtime'):
+                post['ret_transdatetime'] = datetime.strptime(post['ret_transdate']+" "+post['ret_transtime'], "%d.%m.%y %H:%M:%S")
+            confirmation = forms.ConfirmationForm(post)
+            if not confirmation.is_valid():
+                raise SuspiciousOperation('Confirmation by IPayment rejected: POST data does not contain all expected fields.')
             if not self.checkRetParamHash(request.POST):
-                self.logger.error('Confirmation by IPayment rejected: Attempt to send manipulated POST data.')
-                return HttpResponseForbidden()
+                raise SuspiciousOperation('Confirmation by IPayment rejected: Attempt to send manipulated POST data.')
             confirmation.save()
-            order_id = self.shop.get_order_for_id(confirmation.cleaned_data['shopper_id'])
-            self.logger.info('IPayment for order %s returned %s', order_id, confirmation.cleaned_data['ret_status'])
+            order = self.shop.get_order_for_id(confirmation.cleaned_data['shopper_id'])
+            self.logger.info('IPayment for %s returned %s', order, confirmation.cleaned_data['ret_status'])
             if confirmation.cleaned_data['ret_status'] == 'SUCCESS':
-                self.shop.confirm_payment(order_id, confirmation.cleaned_data['trx_amount'], confirmation.cleaned_data['ret_trx_number'], self.backend_name)
+                self.shop.confirm_payment(order, confirmation.cleaned_data['trx_amount'], confirmation.cleaned_data['ret_trx_number'], self.backend_name)
             template = Template("OK")
-        else:
-            self.logger.error('POST data from IPayment is not valid ')
-            template = Template("Failure")
-        return HttpResponse(template.render(Context()))
+            return HttpResponse(template.render(Context()))
+        except Exception as exception:
+             # since this response is sent to IPayment, catch errors locally
+            logging.error(exception.__str__())
+            traceback.print_exc()
+            return HttpResponseServerError('Internal error in ' + __name__)
 
     def calcTrxSecurityHash(self, data):
         """
