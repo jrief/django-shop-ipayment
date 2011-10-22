@@ -1,6 +1,4 @@
-{% extends "base.html" %}
 {% load i18n %}
-{% block content %}
 
 <h1>{% trans "IPayment" %}</h1>
 
@@ -13,6 +11,3 @@
 	{% trans "Card Expire date" %}: {{ form.cc_expdate_month }} / {{ form.cc_expdate_year }}<br/>
 	<input type="submit" name="form_submit">
 </form>
-
-{% endblock %}
- 
