@@ -11,7 +11,7 @@ from django.shortcuts import render_to_response
 from django.template import Context, Template, RequestContext
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseServerError
 from django.views.decorators.csrf import csrf_exempt
-
+from suds.client import Client
 import logging
 import traceback
 import forms
@@ -31,7 +31,8 @@ class OffsiteIPaymentBackend(object):
     def __init__(self, shop):
         self.shop = shop
         self.logger = logging.getLogger(__name__)
-        assert type(settings.IPAYMENT).__name__=='dict', "You need to configure IPAYMENT in settings"
+        assert type(settings.IPAYMENT).__name__=='dict', "You need to configure an IPAYMENT dictionary in settings"
+        assert settings.IPAYMENT['useSessionId'] or settings.IPAYMENT.has_key('securityKey') and len(settings.IPAYMENT['securityKey'])>=6, "In IPAYMENT, useSessionId must be True, or a securityKey must contain at least 6 characters" 
         
     def get_urls(self):
         urlpatterns = patterns('',
@@ -55,34 +56,75 @@ class OffsiteIPaymentBackend(object):
             return HttpResponseBadRequest()
 
         order = self.shop.get_order(request)
-        ipaymentConf = settings.IPAYMENT.copy() 
-        ipaymentConf['trx_amount'] = int(self.shop.get_order_total(order)*100)
-        ipaymentConf['silent'] = 1
-        ipaymentConf['shopper_id'] = self.shop.get_order_unique_id(order)
-        ipaymentConf['advanced_strict_id_check'] = 1
-        ipaymentConf['invoice_text'] = self.shop.get_order_short_name(order) # more creativity here!
-
-        # determine return addresses
-        url_scheme = 'https://' if request.is_secure() else 'http://'
-        url_domain = get_current_site(request).domain
-        ipaymentConf['redirect_url'] = url_scheme + url_domain + reverse('ipayment_success')
-        ipaymentConf['silent_error_url'] = url_scheme + url_domain + reverse('ipayment_error')
-        ipaymentConf['hidden_trigger_url'] = url_scheme + url_domain + reverse('ipayment_hidden')
-
-        # Create the form content
-        extra = { 'accountID': settings.IPAYMENT['accountID'], 'isError': False, 'securityHash': self.calcTrxSecurityHash(ipaymentConf), }
+        ipaymentData = {
+            'silent': 1,
+            'shopper_id': self.shop.get_order_unique_id(order),
+            'advanced_strict_id_check': 1,
+            'invoice_text': settings.IPAYMENT['invoiceText'] % self.shop.get_order_short_name(order),
+            'error_lang': 'en', # TODO: determine this value from language settings
+        }
+        extra = { 'accountId': settings.IPAYMENT['accountId'], 'isError': False }
         if request.GET.has_key('ret_errorcode') and int(request.GET['ret_errorcode'])>0:
             extra['isError'] = True
             extra['errorMessage'] = request.GET['ret_errormsg']
-            ipaymentConf['addr_name'] = request.GET['addr_name']
-        context = { 'form': forms.CustomerForm(ipaymentConf), 'extra': extra }
-        rc = RequestContext(request, context)
+            ipaymentData['addr_name'] = request.GET['addr_name']
+
+        # Fill the form content
+        if settings.IPAYMENT['useSessionId']:
+            # sensible data is send to IPayment in a separate SOAP call
+            ipaymentData['ipayment_session_id'] = self.getSessionID(request, order)
+            form = forms.SessionIPaymentForm(ipaymentData)
+        else:
+            # sensible data is send using this form, but signed to detect manipulation attempts
+            ipaymentData['trxuser_id'] = settings.IPAYMENT['trxUserId']
+            ipaymentData['trxpassword'] = settings.IPAYMENT['trxPassword']
+            ipaymentData['trx_amount'] = int(self.shop.get_order_total(order)*100)
+            ipaymentData['trx_currency'] = settings.IPAYMENT['trxCurrency']
+            ipaymentData['trx_paymenttyp'] = settings.IPAYMENT['trxPaymentType']
+            processorUrls = self.getProcessorURLs(request)
+            ipaymentData['redirect_url'] = processorUrls['redirectUrl']
+            ipaymentData['silent_error_url'] = processorUrls['silentErrorUrl']
+            ipaymentData['hidden_trigger_url'] = processorUrls['hiddenTriggerUrl']
+            ipaymentData['trx_securityhash'] = self.calcTrxSecurityHash(ipaymentData)
+            form = forms.SensibleIPaymentForm(ipaymentData)
+        rc = RequestContext(request, { 'form': form, 'extra': extra, })
         return render_to_response("payment.html", rc)
-    
+
+    def getSessionID(self, request, order):
+        soapClient = Client('https://ipayment.de/service/3.0/?wsdl')
+        sessionData = {
+            'accountData': { 
+                'accountId': settings.IPAYMENT['accountId'],
+                'trxuserId': settings.IPAYMENT['trxUserId'],
+                'trxpassword': settings.IPAYMENT['trxPassword'],
+                'adminactionpassword': settings.IPAYMENT['adminActionPassword'], 
+            },
+            'transactionData': {
+                'trxAmount': int(self.shop.get_order_total(order)*100),
+                'trxCurrency': settings.IPAYMENT['trxCurrency'],
+            },
+            'transactionType': settings.IPAYMENT['trxType'],
+            'paymentType': settings.IPAYMENT['trxPaymentType'],
+            'processorUrls': self.getProcessorURLs(request)
+        }
+        self.logger.debug(sessionData.__str__())
+        result = soapClient.service.createSession(**sessionData)
+        self.logger.debug('Created sessionID by SOAP call to IPayment: %s' % result.__str__())
+        return result
+
+    def getProcessorURLs(self, request):
+            url_scheme = 'https://' if request.is_secure() else 'http://'
+            url_domain = get_current_site(request).domain
+            return {
+                'redirectUrl': url_scheme + url_domain + reverse('ipayment_success'),
+                'silentErrorUrl': url_scheme + url_domain + reverse('ipayment_error'),
+                'hiddenTriggerUrl': url_scheme + url_domain + reverse('ipayment_hidden'),
+            }
+
     def ipayment_return_success_view(self, request):
         if request.method != 'GET':
             return HttpResponseBadRequest()
-        self.logger.debug('ipayment_return_success_view')
+        self.logger.debug('IPayment redirected successfully')
         return render_to_response("success.html", {})
     
     #===========================================================================
@@ -109,7 +151,7 @@ class OffsiteIPaymentBackend(object):
             confirmation = forms.ConfirmationForm(post)
             if not confirmation.is_valid():
                 raise SuspiciousOperation('Confirmation by IPayment rejected: POST data does not contain all expected fields.')
-            if not self.checkRetParamHash(request.POST):
+            if settings.IPAYMENT.has_key('securityKey') and not self.checkRetParamHash(request.POST):
                 raise SuspiciousOperation('Confirmation by IPayment rejected: Attempt to send manipulated POST data.')
             confirmation.save()
             order = self.shop.get_order_for_id(confirmation.cleaned_data['shopper_id'])
@@ -129,8 +171,6 @@ class OffsiteIPaymentBackend(object):
         POST data sent to IPayment can be signed using some parameters and our secretKey.
         Calculate this checksum and return it.
         """
-        if not settings.IPAYMENT.has_key('securityKey') or not settings.IPAYMENT['securityKey']:
-            return False # its OK, if no secret given
         md5 = hashlib.md5()
         md5.update(data['trxuser_id'].__str__())
         md5.update(data['trx_amount'].__str__())
@@ -144,8 +184,6 @@ class OffsiteIPaymentBackend(object):
         POST data sent by IPayment is signed using some reply parameters and our secretKey.
         Check if ret_param_checksum contains a feasible content.
         """
-        if not settings.IPAYMENT.has_key('securityKey') or not settings.IPAYMENT['securityKey']:
-            return True # its unsafe but OK to to give a securityKey 
         if not data.has_key('ret_param_checksum'):
             return False 
         md5 = hashlib.md5()

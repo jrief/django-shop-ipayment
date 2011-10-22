@@ -17,20 +17,43 @@ to django-SHOP's SHOP_PAYMENT_BACKENDS setting.
 Configuration
 =============
 
-In settings.py, add to following dictionary::
+In settings.py, add the following dictionary::
+
+In this configuration, all sensible data is passed to IPayment within the form visible in the
+customers browser. In order to detect data manipulations a checksum is built using some of the forms
+fields together with the given securityKey.
 
     IPAYMENT = {
-        'accountID': 99999,
-        'trxuser_id': 99998,
-        'trx_typ': 'preauth', # details in ipayment_Technik-Handbuch_2010-03.pdf (Seite 13-15)
-        'trxpassword': '0',
-        'trx_currency': 'EUR',
-        'trx_paymenttyp': 'cc', # payment type credit card
-        'error_lang': 'en', # TODO: determine this value from language settings
+        'accountId': 99999,
+        'trxUserId': 99998,
+        'trxType': 'preauth', # details in ipayment_Technik-Handbuch_2010-03.pdf (Seite 13-15)
+        'trxPassword': '0',
+        'trxCurrency': 'EUR',
+        'trxPaymentType': 'cc', # payment type credit card
+        'adminActionPassword': '5cfgRT34xsdedtFLdfHxj7tfwx24fe',
+        'useSessionId': False,
         'securityKey': 'testtest',
+        'invoiceText': 'Example-Shop Invoice: %s',
     }
 
-These values work on the IPayment's sandbox. If you register for IPayment your must use those values.
+In this configuration, all sensible data is passed to IPayment using a separate SOAP call.
+This method requires that the shop web-application can invoke HTTP-requests to IPayment.
+
+    IPAYMENT = {
+        'accountId': 99999,
+        'trxUserId': 99999,
+        'trxType': 'preauth', # details in ipayment_Technik-Handbuch_2010-03.pdf (Seite 13-15)
+        'trxPassword': '0',
+        'trxCurrency': 'EUR',
+        'trxPaymentType': 'cc', # payment type credit card
+        'adminActionPassword': '5cfgRT34xsdedtFLdfHxj7tfwx24fe',
+        'useSessionId': True,
+        'invoiceText': 'Example-Shop Invoice: %s',
+    }
+
+
+The given values work on the IPayment's sandbox. If you register for IPayment other values will be
+assigned to your shop. You can test IPayment without setting up an account.
 
 Implementation
 =============
@@ -45,14 +68,16 @@ that your django-SHOP is reachable from the Internet with a name resolvable by D
 TODO
 =============
 
-An optional but nice feature I plan to implement, is to let django-shop-ipayment create a session on the
-IPayment servers and use the returned session-ID in the following forms instead of passing account
-data using hidden fields.
-
 Unit tests have to be written.
 
 IPayment offers a lot of different payment options, some of which require a PCI DSS certification
 and communicate using SOAP. Currently I have no plans to support these.
+
+CHANGES
+=============
+0.0.3
+django-shop-ipayment is able to pass sensible data to IPayment and gets a session key on return.
+This key then is used in the customers payment form, instead of passing sensible data.
 
 Contributing
 =============
