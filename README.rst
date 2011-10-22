@@ -3,7 +3,12 @@ django-shop-ipayment
 ========================
 
 This module is a payment backend module for django-SHOP, using IPayment (https://ipayment.de)
-from the 1und1 company in Germany.
+from the 1und1 company in Germany. It can be used for credit card and other kind of payments.
+Currently only IPayment's silent CGI mode is implemented, which does not require a PCI DSS
+certification (www.pcisecuritystandards.org) for your shop, because your software never "sees"
+the credit card numbers. With this module your customer never visibly "leaves" your shop in order
+to enter his credit card numbers. You are therefore in full control over all design aspects of
+the payment process.
 
 Installation
 =============
@@ -11,17 +16,19 @@ Clone this module from github::
 
     git clone git@github.com:jrief/django-shop-ipayment.git
 
-In settings.py, add ipayment to INSTALLED_APPS and add 'ipayment.offsite_backend.OffsiteIPaymentBackend'
-to django-SHOP's SHOP_PAYMENT_BACKENDS setting.
+In settings.py
+ - add ‘ipayment’ to INSTALLED_APPS.
+ - add 'ipayment.offsite_backend.OffsiteIPaymentBackend' to SHOP_PAYMENT_BACKENDS.
+ - add the IPAYMENT configuration dictionary, see below
 
 Configuration
 =============
 
 In settings.py, add the following dictionary::
 
-In this configuration, all sensible data is passed to IPayment within the form visible in the
-customers browser. In order to detect data manipulations a checksum is built using some of the forms
-fields together with the given securityKey.
+With this configuration, all sensible data is passed to IPayment within the form as hidden fields,
+but visible to the customer. In order to detect data manipulations a check-sum is built using some
+of the sensible fields (trxUserId, trxPassword and more) together with the given ‘securityKey’.
 
     IPAYMENT = {
         'accountId': 99999,
@@ -33,11 +40,12 @@ fields together with the given securityKey.
         'adminActionPassword': '5cfgRT34xsdedtFLdfHxj7tfwx24fe',
         'useSessionId': False,
         'securityKey': 'testtest',
-        'invoiceText': 'Example-Shop Invoice: %s',
+        'invoiceText': 'Example-Shop Invoice: %s', # The text shown on the customers credit card roll
     }
 
-In this configuration, all sensible data is passed to IPayment using a separate SOAP call.
+With this configuration, all sensible data is passed to IPayment using a separate SOAP call.
 This method requires that the shop web-application can invoke HTTP-requests to IPayment.
+Whenever possible, use this configuration, because it is safer.
 
     IPAYMENT = {
         'accountId': 99999,
@@ -52,18 +60,17 @@ This method requires that the shop web-application can invoke HTTP-requests to I
     }
 
 
-The given values work on the IPayment's sandbox. If you register for IPayment other values will be
-assigned to your shop. You can test IPayment without setting up an account.
+All the given values work on the IPayment's sandbox. Thus these values are immediately suitable to
+check functionality without the need of setting up an account at IPayment. If you register for
+IPayment, you get access to a configuration interface and other values will be assigned to your shop.
+
 
 Implementation
 =============
 
-Currently only IPayment's silent mode CGI is implemented, which does not require a PCI DSS
-certification (www.pcisecuritystandards.org), but which allows to implement every detail of your
-payments forms.
+Note that IPayment contacts your web-server in order to confirm payments. Therefore during testing
+make sure, that your django-SHOP is reachable from the Internet with a name resolvable by DNS.
 
-Note that IPayment contacts your web-server in order to confirm payments. Therefore make sure,
-that your django-SHOP is reachable from the Internet with a name resolvable by DNS.
 
 TODO
 =============
@@ -86,3 +93,4 @@ Feel free to post any comment or suggestion for this project on the django-shop
 mailing list at https://groups.google.com/forum/#!forum/django-shop
 
 Have fun!
+Jacob
