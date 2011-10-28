@@ -4,6 +4,9 @@ from django.conf import settings
 from shop.util.fields import CurrencyField
 
 class Confirmation(models.Model):
+    class Meta:
+        verbose_name = 'IPayment Confirmation'
+
     shopper_id = models.IntegerField()
     ret_booknr = models.CharField(max_length=63)
     ret_errorcode = models.IntegerField()

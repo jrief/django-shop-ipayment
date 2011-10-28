@@ -1,7 +1,9 @@
 #-*- coding: utf-8 -*-
 from datetime import datetime
+from suds.client import Client
 import hashlib
-
+import logging
+import traceback
 from django.conf import settings
 from django.conf.urls.defaults import patterns, url
 from django.contrib.sites.models import get_current_site
@@ -11,9 +13,6 @@ from django.shortcuts import render_to_response
 from django.template import Context, Template, RequestContext
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseServerError
 from django.views.decorators.csrf import csrf_exempt
-from suds.client import Client
-import logging
-import traceback
 import forms
 
 class OffsiteIPaymentBackend(object):
@@ -22,7 +21,7 @@ class OffsiteIPaymentBackend(object):
     '''
     backend_name = "IPayment"
     url_namespace = "ipayment"
-    ALLOWED_CONFIRMERS = ('212.227.34.218', '212.227.34.219', '212.227.34.220', '127.0.0.1')
+    ALLOWED_CONFIRMERS = ('212.227.34.218', '212.227.34.219', '212.227.34.220')
     
     #===========================================================================
     # Defined by the backends API
@@ -49,8 +48,9 @@ class OffsiteIPaymentBackend(object):
     
     def view_that_asks_for_money(self, request):
         '''
-        Show this form to ask for the customers credit cards content. This content shall never be
-        transferred to the local server, instead it is send directly to the IPayment server.
+        Show this form to ask for the customers credit cards content. This content MUST never be
+        posted to the local server, because we are not allowed to "see" the credit card numbers 
+        without a PCI DSS certification. Instead these numbers are sent directly to the IPayment server.
         '''
         if request.method != 'GET':
             return HttpResponseBadRequest()
@@ -91,6 +91,11 @@ class OffsiteIPaymentBackend(object):
         return render_to_response("payment.html", rc)
 
     def getSessionID(self, request, order):
+        """
+        Create a SOAP call containing sensitive data, such as trxUserId and trxPassword and
+        invoked directly at the IPayment's server returning a sessionID. Therefore these
+        sensitive fields have not to be displayed in the clients browser.  
+        """
         soapClient = Client('https://ipayment.de/service/3.0/?wsdl')
         sessionData = {
             'accountData': { 
@@ -107,7 +112,6 @@ class OffsiteIPaymentBackend(object):
             'paymentType': settings.IPAYMENT['trxPaymentType'],
             'processorUrls': self.getProcessorURLs(request)
         }
-        self.logger.debug(sessionData.__str__())
         result = soapClient.service.createSession(**sessionData)
         self.logger.debug('Created sessionID by SOAP call to IPayment: %s' % result.__str__())
         return result
@@ -122,6 +126,11 @@ class OffsiteIPaymentBackend(object):
             }
 
     def ipayment_return_success_view(self, request):
+        """
+        The view the customer is redirected to from the IPayment server after a successful payment.
+        This view is called after 'payment_was_successful' has been called, so the confirmation
+        of the payment is always available here.
+        """
         if request.method != 'GET':
             return HttpResponseBadRequest()
         self.logger.debug('IPayment redirected successfully')
@@ -135,7 +144,9 @@ class OffsiteIPaymentBackend(object):
     def payment_was_successful(self, request):
         '''
         This listens to a confirmation sent by one of the IPayment servers.
-        It is not intended to display any useful information to the client.
+        Valid payments are commited as confirmed payments in their table.
+        The intention of this view is not to display any useful information,
+        since the HTTP-client is a server located at IPayment.
         '''
         if request.method != 'POST':
             return HttpResponseBadRequest()
