@@ -44,7 +44,7 @@ built using some of the sensible fields (trxUserId, trxPassword and more) togeth
         'invoiceText': 'Example-Shop Invoice: %s', # The text shown on the customers credit card roll
     }
 
-With this configuration, all sensible data (trxUserId, trxPassword and more) is passed to IPayment
+With this configuration, all sensible data (trxUserId, trxPassword and more) are passed to IPayment
 using a separate SOAP call, invoked from the shop's web-application. This method requires that your
 shop can speak HTTP to the outside world. Whenever possible, use this configuration, because it is
 safer.
