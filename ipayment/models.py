@@ -4,6 +4,9 @@ from django.conf import settings
 from shop.util.fields import CurrencyField
 
 class Confirmation(models.Model):
+    """
+    Model to store every confirmation for successful or failed payments. 
+    """
     class Meta:
         verbose_name = 'IPayment Confirmation'
 
