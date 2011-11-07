@@ -29,7 +29,7 @@ In settings.py
 With this configuration, all sensible data is passed to IPayment within the submission form as
 hidden fields, but visible to the customer. In order to detect data manipulations a check-sum is
 built using some of the sensible fields (trxUserId, trxPassword and more) together with the given
-‘securityKey’.
+‘securityKey’::
 
     IPAYMENT = {
         'accountId': 99999,
@@ -47,7 +47,7 @@ built using some of the sensible fields (trxUserId, trxPassword and more) togeth
 With this configuration, all sensible data (trxUserId, trxPassword and more) are passed to IPayment
 using a separate SOAP call, invoked from the shop's web-application. This method requires that your
 shop can speak HTTP to the outside world. Whenever possible, use this configuration, because it is
-safer.
+safer::
 
     IPAYMENT = {
         'accountId': 99999,

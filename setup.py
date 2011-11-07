@@ -15,7 +15,7 @@ setup(
     author ="Jacob Rief",
     author_email = "jacob.rief@gmail.com",
     name = 'django-shop-ipayment',
-    version = '0.0.2',
+    version = '0.0.3',
     description = 'A payment backend module for django-SHOP, using IPayment (https://ipayment.de) from the 1und1 company in Germany.',
     long_description = open(os.path.join(os.path.dirname(__file__), 'README.rst')).read(),
     url = 'https://github.com/jrief/django-shop-ipayment',
