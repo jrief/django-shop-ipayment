@@ -38,9 +38,9 @@ class OffsiteIPaymentBackend(object):
     def get_urls(self):
         urlpatterns = patterns('',
             url(r'^$', self.view_that_asks_for_money, name='ipayment'),
-            url(r'^error$', self.view_that_asks_for_money, name='ipayment_error'),
-            url(r'^success$', self.ipayment_return_success_view, name='ipayment_success'),
             url(r'^hidden$', self.payment_was_successful, name='ipayment_hidden'),
+            url(r'^success$', self.ipayment_return_success_view, name='ipayment_success'),
+            url(r'^error$', self.view_that_asks_for_money, name='ipayment_error'),
         )
         return urlpatterns
     
