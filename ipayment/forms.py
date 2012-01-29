@@ -5,9 +5,12 @@ from datetime import date
 from django.utils.translation import ugettext
 import models
 
-MONTH_CHOICES = (('01', ugettext('Jan')), ('02', ugettext('Feb')), ('03', ugettext('Mar')), ('04', ugettext('Apr')),
-                 ('05', ugettext('May')), ('06', ugettext('Jun')), ('07', ugettext('Jul')), ('08', ugettext('Aug')),
-                 ('09', ugettext('Sep')), ('10', ugettext('Oct')), ('11', ugettext('Nov')), ('12', ugettext('Dec')))
+MONTH_CHOICES = (
+    ('01', ugettext('Jan')), ('02', ugettext('Feb')), ('03', ugettext('Mar')), 
+    ('04', ugettext('Apr')), ('05', ugettext('May')), ('06', ugettext('Jun')),
+    ('07', ugettext('Jul')), ('08', ugettext('Aug')), ('09', ugettext('Sep')),
+    ('10', ugettext('Oct')), ('11', ugettext('Nov')), ('12', ugettext('Dec'))
+)
 YEAR_CHOICES = []
 for year in range(date.today().year, date.today().year+15):
     YEAR_CHOICES.append((year, year))
