@@ -11,9 +11,11 @@ from django.core.urlresolvers import reverse
 from django.core.exceptions import SuspiciousOperation
 from django.shortcuts import render_to_response
 from django.template import Context, Template, RequestContext
-from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseServerError
+from django.http import HttpResponse, HttpResponseRedirect, \
+    HttpResponseBadRequest, HttpResponseServerError
 from django.views.decorators.csrf import csrf_exempt
-import forms
+from forms import SessionIPaymentForm, SensibleIPaymentForm, ConfirmationForm
+from models import Confirmation
 
 class OffsiteIPaymentBackend(object):
     '''
@@ -73,7 +75,7 @@ class OffsiteIPaymentBackend(object):
         if settings.IPAYMENT['useSessionId']:
             # sensible data is send to IPayment in a separate SOAP call
             ipaymentData['ipayment_session_id'] = self.getSessionID(request, order)
-            form = forms.SessionIPaymentForm(ipaymentData)
+            form = SessionIPaymentForm(ipaymentData)
         else:
             # sensible data is send using this form, but signed to detect manipulation attempts
             ipaymentData['trxuser_id'] = settings.IPAYMENT['trxUserId']
@@ -86,7 +88,7 @@ class OffsiteIPaymentBackend(object):
             ipaymentData['silent_error_url'] = processorUrls['silentErrorUrl']
             ipaymentData['hidden_trigger_url'] = processorUrls['hiddenTriggerUrl']
             ipaymentData['trx_securityhash'] = self.calcTrxSecurityHash(ipaymentData)
-            form = forms.SensibleIPaymentForm(ipaymentData)
+            form = SensibleIPaymentForm(ipaymentData)
         rc = RequestContext(request, { 'form': form, 'extra': extra, })
         return render_to_response("payment.html", rc)
 
