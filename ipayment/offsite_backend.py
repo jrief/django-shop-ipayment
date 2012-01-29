@@ -172,31 +172,62 @@ class OffsiteIPaymentBackend(object):
         if request.method != 'POST':
             return HttpResponseBadRequest()
         try:
-            # assert that this request is not forged 
-            if request.META['REMOTE_ADDR'] == '127.0.0.1' and self.ALLOWED_CONFIRMERS.count(request.META['HTTP_X_FORWARDED_FOR']) == 0 or self.ALLOWED_CONFIRMERS.count(request.META['REMOTE_ADDR']) == 0:
-                raise SuspiciousOperation('Request invoked from suspicious IP address %s' % request.META['REMOTE_ADDR'])
+            if settings.IPAYMENT['checkOriginatingIP']:
+                self.checkOriginatingIP(request)
             post = request.POST.copy()
             if post.has_key('trx_amount'):
                 post['trx_amount'] = float(post['trx_amount'])/100.0
             if post.has_key('ret_transdate') and post.has_key('ret_transtime'):
                 post['ret_transdatetime'] = datetime.strptime(post['ret_transdate']+" "+post['ret_transtime'], "%d.%m.%y %H:%M:%S")
-            confirmation = forms.ConfirmationForm(post)
+            confirmation = ConfirmationForm(post)
             if not confirmation.is_valid():
                 raise SuspiciousOperation('Confirmation by IPayment rejected: POST data does not contain all expected fields.')
-            if settings.IPAYMENT.has_key('securityKey') and not self.checkRetParamHash(request.POST):
-                raise SuspiciousOperation('Confirmation by IPayment rejected: Attempt to send manipulated POST data.')
+            if settings.IPAYMENT.has_key('securityKey'):
+                self.checkRetParamHash(request.POST)
             confirmation.save()
             order = self.shop.get_order_for_id(confirmation.cleaned_data['shopper_id'])
-            self.logger.info('IPayment for %s returned %s', order, confirmation.cleaned_data['ret_status'])
+            self.logger.info('IPayment for %s confirmed %s', order, 
+                             confirmation.cleaned_data['ret_status'])
             if confirmation.cleaned_data['ret_status'] == 'SUCCESS':
-                self.shop.confirm_payment(order, confirmation.cleaned_data['trx_amount'], confirmation.cleaned_data['ret_trx_number'], self.backend_name)
+                self.shop.confirm_payment(order, confirmation.cleaned_data['trx_amount'], 
+                    confirmation.cleaned_data['ret_trx_number'], self.backend_name)
+            # render a simple 'OK' as response to IPayment
             template = Template("OK")
             return HttpResponse(template.render(Context()))
         except Exception as exception:
-             # since this response is sent to IPayment, catch errors locally
+            # since this response is sent to IPayment, catch errors locally
+            logging.error('POST data: ' + request.POST.__str__())
             logging.error(exception.__str__())
             traceback.print_exc()
             return HttpResponseServerError('Internal error in ' + __name__)
+
+    def checkOriginatingIP(self, request):
+        """
+        Check that the request is coming from a trusted source. A list of allowed
+        sources is hard coded into this module.
+        If the software is operated behind a proxy, instead of using the remote
+        IP address, the HTTP-header HTTP_X_FORWARDED_FOR is evaluated against
+        the list of allowed sources.
+        """
+        originating_ip = request.META['REMOTE_ADDR']
+        if settings.IPAYMENT['reverseProxies'].count(originating_ip):
+            if request.META.has_key('HTTP_X_FORWARDED_FOR'):
+                forged = True
+                for client in request.META['HTTP_X_FORWARDED_FOR'].split(','):
+                    if self.ALLOWED_CONFIRMERS.count(client):
+                        forged = False
+                        originating_ip = client
+                        break
+                if forged:
+                    raise SuspiciousOperation('Request invoked from suspicious IP address %s'
+                                    % request.META['HTTP_X_FORWARDED_FOR'])
+            else:
+                logging.warning('Allowed proxy servers are declared, but header HTTP_X_FORWARDED_FOR is missing')
+        elif not self.ALLOWED_CONFIRMERS.count(originating_ip):
+            raise SuspiciousOperation('Request invoked from suspicious IP address %s'
+                                      % originating_ip)
+        self.logger.debug('POST data received from IPayment[%s]: %s.' 
+                          % (originating_ip, request.POST.__str__()))
 
     def calcTrxSecurityHash(self, data):
         """
