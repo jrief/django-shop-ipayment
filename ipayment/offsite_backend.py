@@ -127,17 +127,36 @@ class OffsiteIPaymentBackend(object):
                 'hiddenTriggerUrl': url_scheme + url_domain + reverse('ipayment_hidden'),
             }
 
+    #===========================================================================
+    # Handlers, which process GET redirects initiated by IPayment
+    #===========================================================================
+    
     def ipayment_return_success_view(self, request):
         """
-        The view the customer is redirected to from the IPayment server after a successful payment.
-        This view is called after 'payment_was_successful' has been called, so the confirmation
-        of the payment is always available here.
+        The view the customer is redirected to from the IPayment server after a
+        successful payment.
+        This view is called after 'payment_was_successful' has been called, so
+        the confirmation of the payment is always available here.
         """
         if request.method != 'GET':
             return HttpResponseBadRequest()
-        self.logger.debug('IPayment redirected successfully')
-        return render_to_response("success.html", {})
-    
+        try:
+            shopper_id = int(request.GET['shopper_id'])
+            self.logger.info('IPayment for order %s redirected client with status %s',
+                             shopper_id, request.GET['ret_status'])
+            if request.GET['ret_status'] != 'SUCCESS':
+                return HttpResponseRedirect(self.shop.get_cancel_url())
+            confirmation = Confirmation.objects.filter(shopper_id=shopper_id)
+            if confirmation.count() != 1:
+                raise SuspiciousOperation('Redirect by IPayment rejected: '
+                    'No order confirmation found for shopper_id %s.' % shopper_id)
+            return HttpResponseRedirect(self.shop.get_finished_url())
+        except Exception as exception:
+            # since this response is sent to IPayment, catch errors locally
+            logging.error(exception.__str__())
+            traceback.print_exc()
+            return HttpResponseServerError('Internal error in ' + __name__)
+
     #===========================================================================
     # Handlers, which process POST data from IPayment
     #===========================================================================
