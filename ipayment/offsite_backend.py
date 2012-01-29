@@ -248,7 +248,7 @@ class OffsiteIPaymentBackend(object):
         Check if ret_param_checksum contains a feasible content.
         """
         if not data.has_key('ret_param_checksum'):
-            return False 
+            raise SuspiciousOperation('POST data from IPayment does not contain expected parameter "ret_param_checksum"')
         md5 = hashlib.md5()
         md5.update(data['trxuser_id'].__str__())
         md5.update(data['trx_amount'].__str__())
@@ -256,4 +256,5 @@ class OffsiteIPaymentBackend(object):
         md5.update(data['ret_authcode'])
         md5.update(data['ret_booknr'])
         md5.update(settings.IPAYMENT['securityKey'])
-        return md5.hexdigest() == data['ret_param_checksum']
+        if md5.hexdigest() != data['ret_param_checksum']:
+            raise SuspiciousOperation('Checksum delivered by IPayment does not match internal hash digest.')
