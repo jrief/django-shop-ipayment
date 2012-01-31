@@ -10,7 +10,7 @@ from django.contrib.sites.models import get_current_site
 from django.core.urlresolvers import reverse
 from django.core.exceptions import SuspiciousOperation
 from django.shortcuts import render_to_response
-from django.template import Context, Template, RequestContext
+from django.template import RequestContext
 from django.http import HttpResponse, HttpResponseRedirect, \
     HttpResponseBadRequest, HttpResponseServerError
 from django.views.decorators.csrf import csrf_exempt
