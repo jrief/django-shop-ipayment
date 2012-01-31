@@ -61,13 +61,7 @@ class OffsiteIPaymentBackend(object):
             return HttpResponseBadRequest()
 
         order = self.shop.get_order(request)
-        ipaymentData = {
-            'silent': 1,
-            'shopper_id': self.shop.get_order_unique_id(order),
-            'advanced_strict_id_check': 1,
-            'invoice_text': settings.IPAYMENT['invoiceText'] % self.shop.get_order_short_name(order),
-            'error_lang': 'en', # TODO: determine this value from language settings
-        }
+        ipaymentData = self.getHiddenContext(order)
         extra = { 'accountId': settings.IPAYMENT['accountId'], 'isError': False }
         if request.GET.has_key('ret_errorcode') and int(request.GET['ret_errorcode'])>0:
             extra['isError'] = True
@@ -81,13 +75,22 @@ class OffsiteIPaymentBackend(object):
             form = SessionIPaymentForm(ipaymentData)
         else:
             # sensible data is send using this form, but signed to detect manipulation attempts
-            ipaymentData.update(self.getHiddenContext())
+            ipaymentData.update(self.getSessionlessContext(request, order))
             ipaymentData['trx_securityhash'] = self.calcTrxSecurityHash(ipaymentData)
             form = SensibleIPaymentForm(ipaymentData)
         rc = RequestContext(request, { 'form': form, 'extra': extra, })
         return render_to_response("payment.html", rc)
 
-    def getHiddenContext(self, request, order):
+    def getHiddenContext(self, order):
+        return {
+            'silent': 1,
+            'shopper_id': self.shop.get_order_unique_id(order),
+            'advanced_strict_id_check': 1,
+            'invoice_text': settings.IPAYMENT['invoiceText'] % self.shop.get_order_short_name(order),
+            'error_lang': 'en', # TODO: determine this value from language settings
+        }
+
+    def getSessionlessContext(self, request, order):
         processorUrls = self.getProcessorURLs(request)
         return {
             'trxuser_id': settings.IPAYMENT['trxUserId'],
