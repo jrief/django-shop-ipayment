@@ -94,6 +94,8 @@ Set the host name of your environment in tests/testapp/settings.py::
 
     HOST_NAME = 'ipayment.example.net'
 
+The unit tests require Django-1.4 or greater.
+
 TODO
 ====
 
