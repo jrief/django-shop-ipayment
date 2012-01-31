@@ -32,8 +32,11 @@ class OffsiteIPaymentBackend(object):
     def __init__(self, shop):
         self.shop = shop
         self.logger = logging.getLogger(__name__)
-        assert type(settings.IPAYMENT).__name__=='dict', "You need to configure an IPAYMENT dictionary in settings"
-        assert settings.IPAYMENT['useSessionId'] or settings.IPAYMENT.has_key('securityKey') and len(settings.IPAYMENT['securityKey'])>=6, "In IPAYMENT, useSessionId must be True, or a securityKey must contain at least 6 characters" 
+        assert type(settings.IPAYMENT).__name__=='dict', \
+            "You need to configure an IPAYMENT dictionary in settings"
+        assert settings.IPAYMENT['useSessionId'] or \
+            settings.IPAYMENT.has_key('securityKey') and len(settings.IPAYMENT['securityKey'])>=6, \
+            "In IPAYMENT, useSessionId must be True, or a securityKey must contain at least 6 characters" 
         
     def get_urls(self):
         urlpatterns = patterns('',
