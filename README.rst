@@ -36,7 +36,7 @@ In settings.py
 With this configuration, all sensible data is passed to IPayment within the
 submission form as hidden fields, but visible to the customer. In order to
 detect data manipulations, a check-sum is built using some of the sensible fields
-(trxUserId, trxPassword and more) together with the given ``securityKey``.
+(``trxUserId``, ``trxPassword`` and more) together with the given ``securityKey``.
 Use this configuration, whenever your shop is not able to speak HTTPS to the 
 outside world. Many administrators of datacenters inhibit HTTPS traffic from
 inside to the Internet. In these situations, use this configuration::
@@ -54,8 +54,8 @@ inside to the Internet. In these situations, use this configuration::
         'invoiceText': 'Example-Shop Invoice: %s', # The text shown on the customers credit card roll
     }
 
-With this configuration, all sensible data (trxUserId, trxPassword and more) are
-passed to IPayment using a separate SOAP call, invoked from the shop's
+With this configuration, all sensible data (``trxUserId``, ``trxPassword`` and
+more) are passed to IPayment using a separate SOAP call, invoked from the shop's
 web-application. This method requires that your shop can speak HTTPS to the
 outside world. Whenever possible, use this configuration, because it is
 safer::
@@ -91,6 +91,7 @@ If you do not have a domain name which resolves onto your extrenal IP address,
 use a service such as http://www.gnudip.org/ 
 
 Set the host name of your environment in tests/testapp/settings.py::
+
     HOST_NAME = 'ipayment.example.net'
 
 TODO
