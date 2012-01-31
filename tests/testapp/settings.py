@@ -39,7 +39,7 @@ LANGUAGE_CODE = 'en-us'
 SITE_ID = 1
 
 # The hostname of this testing server visible to the outside world
-HOST_NAME = 'galbum.gnudip.net'
+HOST_NAME = 'ipayment.netguru.de'
 
 # If you set this to False, Django will make some optimizations so as not
 # to load the internationalization machinery.

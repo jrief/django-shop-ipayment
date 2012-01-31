@@ -218,7 +218,7 @@ class OffsiteIPaymentBackend(object):
         IP address, the HTTP-header HTTP_X_FORWARDED_FOR is evaluated against
         the list of allowed sources.
         """
-        # TODO use request.get_host()
+        # TODO: use request.get_host()
         originating_ip = request.META['REMOTE_ADDR']
         if settings.IPAYMENT['reverseProxies'].count(originating_ip):
             if request.META.has_key('HTTP_X_FORWARDED_FOR'):

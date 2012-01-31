@@ -28,14 +28,18 @@ In settings.py
 
 * Add ‘ipayment’ to INSTALLED_APPS.
 * Add 'ipayment.offsite_backend.OffsiteIPaymentBackend' to SHOP_PAYMENT_BACKENDS.
-* Add the IPAYMENT configuration dictionary, see below.
+* Add the one of the IPAYMENT configuration dictionaries, see below.
+* Test your application using the sandbox.
+* Then close a deal with http://ipayment.de , and populate your configurations
+  according to the given settings.
 
 With this configuration, all sensible data is passed to IPayment within the
 submission form as hidden fields, but visible to the customer. In order to
-detect data manipulations a check-sum is built using some of the sensible fields
+detect data manipulations, a check-sum is built using some of the sensible fields
 (trxUserId, trxPassword and more) together with the given ``securityKey``.
 Use this configuration, whenever your shop is not able to speak HTTPS to the 
-outside world, for instance if you are behind a corporate firewall::
+outside world. Many administrators of datacenters inhibit HTTPS traffic from
+inside to the Internet. In these situations, use this configuration::
 
     IPAYMENT = {
         'accountId': 99999,
@@ -80,28 +84,50 @@ Testing
 =======
 
 Note that IPayment contacts your web-server in order to confirm payments.
-Therefore during testing make sure, that your django-SHOP is reachable from the
-Internet with a name resolvable by DNS. This is specially important if run your
-development environment on a workstation behind a firewall.
+Therefore during testing make sure, that your testing environment is reachable
+from the Internet with a name resolvable by DNS. You might have to configure
+your firewall, so that your workstation is reachable on port 80.
+If you do not have a domain name which resolves onto your extrenal IP address,
+use a service such as http://www.gnudip.org/ 
 
+Set the host name of your environment in tests/testapp/settings.py::
+    HOST_NAME = 'ipayment.example.net'
 
 TODO
 ====
 
-Unit tests have to be written.
-
-IPayment offers a lot of different payment options, some of which require a PCI DSS certification
-and communicate using SOAP. Currently I have no plans to support these.
+IPayment offers a lot of different payment options, some of which require a PCI
+DSS certification and communicate using SOAP. Currently I have no plans to
+support these.
 
 CHANGES
 =======
+
+0.0.5
+Unit tests have been written to check for both kind of payment methods.
+
+0.0.4
+Fixed the update of the correct status in table order.
+
 0.0.3
-django-shop-ipayment is able to pass sensible data to IPayment and gets a session key on return.
-This key then is used in the customers payment form, instead of passing sensible data.
+django-shop-ipayment is able to pass sensible data to IPayment and gets a
+session key on return.
+This key then is used in the customers payment form, instead of passing sensible
+data.
 
 Security
---------
-If using a proxy, disable forwarding the X_HTTP_FORWARD header.
+========
+
+If using a proxy, disable forwarding the X_HTTP_FORWARD header, but make sure,
+that the proxy sets the X_HTTP_FORWARD header with the IP address of the client.
+This header is used to assure that payment notifications originate from
+IPayment. If you have trouble with your proxy settings, disable this security
+feature in settings.py ::
+   IPAYMENT = {
+      ...
+       'checkOriginatingIP': False,
+      ...
+   }
 
 Contributing
 ============
