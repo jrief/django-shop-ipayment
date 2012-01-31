@@ -193,7 +193,7 @@ class OffsiteIPaymentBackend(object):
             confirmation = ConfirmationForm(post)
             if not confirmation.is_valid():
                 raise SuspiciousOperation('Confirmation by IPayment rejected: POST data does not contain all expected fields.')
-            if settings.IPAYMENT.has_key('securityKey'):
+            if not settings.IPAYMENT['useSessionId']:
                 self.checkRetParamHash(request.POST)
             confirmation.save()
             order = self.shop.get_order_for_id(confirmation.cleaned_data['shopper_id'])
