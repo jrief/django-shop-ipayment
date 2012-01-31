@@ -1,0 +1,10 @@
+[run]
+branch = True
+source =
+    ipayment
+omit =
+    ../../*migrations*
+    ../../*tests*
+    /usr/share/*
+[report]
+precision = 2
