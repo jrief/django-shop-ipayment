@@ -196,9 +196,7 @@ class OffsiteIPaymentBackend(object):
             if confirmation.cleaned_data['ret_status'] == 'SUCCESS':
                 self.shop.confirm_payment(order, confirmation.cleaned_data['trx_amount'], 
                     confirmation.cleaned_data['ret_trx_number'], self.backend_name)
-            # render a simple 'OK' as response to IPayment
-            template = Template("OK")
-            return HttpResponse(template.render(Context()))
+            return HttpResponse('OK')
         except Exception as exception:
             # since this response is sent to IPayment, catch errors locally
             logging.error('POST data: ' + request.POST.__str__())
@@ -214,6 +212,7 @@ class OffsiteIPaymentBackend(object):
         IP address, the HTTP-header HTTP_X_FORWARDED_FOR is evaluated against
         the list of allowed sources.
         """
+        # TODO use request.get_host()
         originating_ip = request.META['REMOTE_ADDR']
         if settings.IPAYMENT['reverseProxies'].count(originating_ip):
             if request.META.has_key('HTTP_X_FORWARDED_FOR'):
