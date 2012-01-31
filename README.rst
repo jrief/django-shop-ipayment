@@ -94,7 +94,23 @@ Set the host name of your environment in tests/testapp/settings.py::
 
     HOST_NAME = 'ipayment.example.net'
 
-The unit tests require Django-1.4 or greater.
+The unit test must start a web service which listens on port 80 of your testing
+environment. This feature is only available in Django-1.4 or greater. To run the
+test on its own, invoke::
+
+   cd tests/testapp
+   python manage.py test --liveserver 0.0.0.0:80 
+
+If you run Django behind a proxy, such as Apache or nginx, run:: 
+
+   cd tests/testapp
+   python manage.py test --liveserver 127.0.0.1:8080
+
+These values depend on your testing environment.
+
+If you have trouble running these tests, try to reach the shop using a browser,
+while the test suite is running, which is about 20 seconds. The test suite has
+an artificial delay, because it has to wait for external events.
 
 TODO
 ====
