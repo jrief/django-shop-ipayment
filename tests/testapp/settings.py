@@ -129,7 +129,7 @@ SHOP_PAYMENT_BACKENDS = (
 # Shop module settings
 SHOP_SHIPPING_FLAT_RATE = '10' # That's just for the flat rate shipping backend
 
-IPAYMENT = {
+IPAYMENT_WITHOUT_SESSION = {
     'accountId': 99999,
     'trxUserId': 99998,
     'trxType': 'preauth', # IPayment_Technik-Handbuch_2010-03.pdf (Seite 13-15)
@@ -143,3 +143,20 @@ IPAYMENT = {
     'checkOriginatingIP': True,
     'reverseProxies': [ '127.0.0.1' ], # List of allowed reverse proxies
 }
+
+IPAYMENT_WITH_SESSION = {
+    'accountId': 99999,
+    'trxUserId': 99999,
+    'trxType': 'preauth', # IPayment_Technik-Handbuch_2010-03.pdf (Seite 13-15)
+    'trxPassword': '0',
+    'trxCurrency': 'EUR', 
+    'trxPaymentType': 'cc', # payment type: credit card
+    'adminActionPassword': '5cfgRT34xsdedtFLdfHxj7tfwx24fe',
+    'useSessionId': True,
+    'securityKey': 'testtest',
+    'invoiceText': 'Example-Shop Invoice: %s',
+    'checkOriginatingIP': True,
+    'reverseProxies': [ '127.0.0.1' ], # List of allowed reverse proxies
+}
+
+IPAYMENT = IPAYMENT_WITHOUT_SESSION.copy()
