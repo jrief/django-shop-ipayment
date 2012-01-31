@@ -78,19 +78,24 @@ class OffsiteIPaymentBackend(object):
             form = SessionIPaymentForm(ipaymentData)
         else:
             # sensible data is send using this form, but signed to detect manipulation attempts
-            ipaymentData['trxuser_id'] = settings.IPAYMENT['trxUserId']
-            ipaymentData['trxpassword'] = settings.IPAYMENT['trxPassword']
-            ipaymentData['trx_amount'] = int(self.shop.get_order_total(order)*100)
-            ipaymentData['trx_currency'] = settings.IPAYMENT['trxCurrency']
-            ipaymentData['trx_paymenttyp'] = settings.IPAYMENT['trxPaymentType']
-            processorUrls = self.getProcessorURLs(request)
-            ipaymentData['redirect_url'] = processorUrls['redirectUrl']
-            ipaymentData['silent_error_url'] = processorUrls['silentErrorUrl']
-            ipaymentData['hidden_trigger_url'] = processorUrls['hiddenTriggerUrl']
+            ipaymentData.update(self.getHiddenContext())
             ipaymentData['trx_securityhash'] = self.calcTrxSecurityHash(ipaymentData)
             form = SensibleIPaymentForm(ipaymentData)
         rc = RequestContext(request, { 'form': form, 'extra': extra, })
         return render_to_response("payment.html", rc)
+
+    def getHiddenContext(self, request, order):
+        processorUrls = self.getProcessorURLs(request)
+        return {
+            'trxuser_id': settings.IPAYMENT['trxUserId'],
+            'trxpassword': settings.IPAYMENT['trxPassword'],
+            'trx_amount': int(self.shop.get_order_total(order)*100),
+            'trx_currency': settings.IPAYMENT['trxCurrency'],
+            'trx_paymenttyp': settings.IPAYMENT['trxPaymentType'],
+            'redirect_url': processorUrls['redirectUrl'],
+            'silent_error_url': processorUrls['silentErrorUrl'],
+            'hidden_trigger_url': processorUrls['hiddenTriggerUrl'],
+        }
 
     def getSessionID(self, request, order):
         """
