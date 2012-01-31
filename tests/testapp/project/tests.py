@@ -44,6 +44,9 @@ class IPaymentTest(LiveServerTestCase):
         self._create_cart()
         self._go_shopping()
 
+    def tearDown(self):
+        time.sleep(10) # this keeps the server running for a while
+
     def _create_cart(self):
         self.product = DiaryProduct(isbn='1234567890', number_of_pages=100)
         self.product.name = 'test'
@@ -85,36 +88,35 @@ class IPaymentTest(LiveServerTestCase):
         #request = self.factory.get(reverse('ipayment'))
         self.order = self.ipayment_backend.shop.get_order(self.request)
 
-    def test_one(self):
+    def _simulate_payment(self):
         """
-        
+        Simulate a payment to the IPayment processor.
+        The full payment information is sent with method POST. Make sure your
+        test environment is reachable from the Internet. This test will 
+        a) invoke a POST request from IPayment to this server
+        b) redirecet the client to a given URL on this server
+        Both actions shall result in the confirmation of the payment.
         """
-        processorUrls = self.ipayment_backend.getProcessorURLs(self.request)
-        post = {
-            'silent': 1,
-            'shopper_id': self.ipayment_backend.shop.get_order_unique_id(self.order),
-            'advanced_strict_id_check': 0, # disabled for testing 
-            'invoice_text': 'invoice text',
-            'error_lang': 'en',
-            'silent': 1,
-            'trxuser_id': settings.IPAYMENT['trxUserId'],
-            'trxpassword': settings.IPAYMENT['trxPassword'],
-            'trx_amount': int(self.ipayment_backend.shop.get_order_total(self.order)*100),
-            'trx_currency': 'EUR',
-            'trx_paymenttyp': 'cc',
-            'redirect_url': processorUrls['redirectUrl'],
-            'silent_error_url': processorUrls['silentErrorUrl'],
-            'hidden_trigger_url': processorUrls['hiddenTriggerUrl'],
+        post = self.ipayment_backend.getHiddenContext(self.order)
+        post['advanced_strict_id_check'] = 0 # disabled for testing only 
+        # (see ipayment_Technik-Handbuch.pdf page 32)
+        if settings.IPAYMENT['useSessionId']:
+            post['ipayment_session_id'] = self.ipayment_backend.getSessionID(self.request, self.order)
+        else:
+            post.update(self.ipayment_backend.getSessionlessContext(self.request, self.order))
+            post['trx_securityhash'] = self.ipayment_backend.calcTrxSecurityHash(post)
+        post.update({
             'addr_name': 'John Doe',
-            'cc_number': '4012888888881881',
+            'cc_number': '4012888888881881', # Visa test credit card number
             'cc_checkcode': '123',
             'cc_expdate_month': '12',
             'cc_expdate_year': '2029',
-        }
-        post['trx_securityhash'] = self.ipayment_backend.calcTrxSecurityHash(post)
+        })
         ipayment_uri = '/merchant/%s/processor/2.0/' % settings.IPAYMENT['accountId']
-        headers = {"Content-type": "application/x-www-form-urlencoded",
-                   "Accept": "text/plain"}
+        headers = {
+            "Content-type": "application/x-www-form-urlencoded",
+            "Accept": "text/plain"
+        }
         conn = httplib.HTTPSConnection('ipayment.de')
         conn.request("POST", ipayment_uri, urllib.urlencode(post), headers)
         httpresp = conn.getresponse()
@@ -135,4 +137,18 @@ class IPaymentTest(LiveServerTestCase):
         self.assertEqual(order.status, Order.COMPLETED)
         confirmation = Confirmation.objects.get(pk=self.order.id)
         self.assertEqual(confirmation.ret_status, 'SUCCESS')
-        time.sleep(10) # this keeps the server running 
+
+    def test_without_session(self):
+        """
+        Simulate a payment to the IPayment processor without using a session.
+        """
+        setattr(settings, 'IPAYMENT', settings.IPAYMENT_WITHOUT_SESSION)
+        self._simulate_payment()
+
+    def test_with_session(self):
+        """
+        Simulate a payment to the IPayment processor using a session id generated
+        through a SOAP invocation.
+        """
+        setattr(settings, 'IPAYMENT', settings.IPAYMENT_WITH_SESSION)
+        self._simulate_payment()
