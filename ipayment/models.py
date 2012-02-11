@@ -1,4 +1,5 @@
 #-*- coding: utf-8 -*-
+from django.utils.translation import ugettext_lazy as _
 from django.db import models
 from shop.util.fields import CurrencyField
 
@@ -7,10 +8,11 @@ class Confirmation(models.Model):
     Model to store every confirmation for successful or failed payments. 
     """
     class Meta:
-        verbose_name = 'IPayment Confirmation'
+        verbose_name = _('IPayment Confirmation')
 
     shopper_id = models.IntegerField()
-    ret_booknr = models.CharField(max_length=63)
+    vendor_comment = models.TextField(null=True, blank=True)
+    ret_booknr = models.CharField(max_length=63, )
     ret_errorcode = models.IntegerField()
     trx_paymentmethod = models.CharField(max_length=63)
     ret_trx_number = models.CharField(max_length=63)
