@@ -1,19 +1,19 @@
-#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+from django.utils.translation import ugettext as _
 from django import forms
 from datetime import date
-from django.utils.translation import ugettext
 import models
 
+
 MONTH_CHOICES = (
-    ('01', ugettext('Jan')), ('02', ugettext('Feb')), ('03', ugettext('Mar')), 
-    ('04', ugettext('Apr')), ('05', ugettext('May')), ('06', ugettext('Jun')),
-    ('07', ugettext('Jul')), ('08', ugettext('Aug')), ('09', ugettext('Sep')),
-    ('10', ugettext('Oct')), ('11', ugettext('Nov')), ('12', ugettext('Dec'))
+    ('01', _('Jan')), ('02', _('Feb')), ('03', _('Mar')), ('04', _('Apr')),
+    ('05', _('May')), ('06', _('Jun')), ('07', _('Jul')), ('08', _('Aug')),
+    ('09', _('Sep')), ('10', _('Oct')), ('11', _('Nov')), ('12', _('Dec'))
 )
 YEAR_CHOICES = []
 for year in range(date.today().year, date.today().year+15):
     YEAR_CHOICES.append((year, year))
+
 
 class AbstractIPaymentForm(forms.Form):
     """
@@ -24,15 +24,19 @@ class AbstractIPaymentForm(forms.Form):
     invoice_text = forms.CharField(widget=forms.HiddenInput)
     error_lang = forms.CharField(widget=forms.HiddenInput)
     silent = forms.IntegerField(widget=forms.HiddenInput)
-    addr_name = forms.CharField()
-    cc_expdate_month = forms.ChoiceField(choices=MONTH_CHOICES)
-    cc_expdate_year = forms.ChoiceField(choices=YEAR_CHOICES)
+    addr_name = forms.CharField(label=_('Cardholder name'))
+    cc_number = forms.CharField(label=_('Credit card number'))
+    cc_checkcode = forms.CharField(label=_('Check code'))
+    cc_expdate_month = forms.ChoiceField(choices=MONTH_CHOICES, label=_('Card expire month'))
+    cc_expdate_year = forms.ChoiceField(choices=YEAR_CHOICES, label=_('Card expire year'))
+
 
 class SessionIPaymentForm(AbstractIPaymentForm):
     """
     Form with additional sensible fields, which are not used when a sessionId is used.
     """
     ipayment_session_id = forms.CharField(widget=forms.HiddenInput)
+
 
 class SensibleIPaymentForm(AbstractIPaymentForm):
     """
@@ -47,6 +51,7 @@ class SensibleIPaymentForm(AbstractIPaymentForm):
     silent_error_url = forms.CharField(widget=forms.HiddenInput)
     hidden_trigger_url = forms.CharField(widget=forms.HiddenInput)
     trx_securityhash = forms.CharField(widget=forms.HiddenInput)
+
 
 class ConfirmationForm(forms.ModelForm):
     """
