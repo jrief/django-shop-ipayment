@@ -17,6 +17,7 @@ from django.views.decorators.csrf import csrf_exempt
 from forms import SessionIPaymentForm, SensibleIPaymentForm, ConfirmationForm
 from models import Confirmation
 
+
 class OffsiteIPaymentBackend(object):
     '''
     Glue code to let django-SHOP talk to the ipayment backend.
@@ -53,35 +54,40 @@ class OffsiteIPaymentBackend(object):
     
     def view_that_asks_for_money(self, request):
         '''
-        Show this form to ask for the customers credit cards content. This content MUST never be
-        posted to the local server, because we are not allowed to "see" the credit card numbers 
-        without a PCI DSS certification. Instead these numbers are sent directly to the IPayment server.
+        Show this form to ask for the customers credit cards content. This
+        content MUST never be posted to the local server, because we are not
+        allowed to "see" the customers credit card numbers without a PCI DSS
+        certification. Instead these numbers are sent directly to the IPayment
+        server. The communication between us and IPayment is done through a
+        separate channel.
         '''
         if request.method != 'GET':
             return HttpResponseBadRequest()
+        context = self.get_context(request)
+        return render_to_response('payment.html', context)
 
+    def get_context(self, request):
         order = self.shop.get_order(request)
-        ipaymentData = self.getHiddenContext(order)
-        extra = { 'accountId': settings.IPAYMENT['accountId'], 'isError': False }
+        ipayment_data = self._get_hidden_context(order)
+        meta = { 'accountId': settings.IPAYMENT['accountId'], 'isError': False }
         if request.GET.has_key('ret_errorcode') and int(request.GET['ret_errorcode'])>0:
-            extra['isError'] = True
-            extra['errorMessage'] = request.GET['ret_errormsg']
-            ipaymentData['addr_name'] = request.GET['addr_name']
+            meta['isError'] = True
+            meta['errorMessage'] = request.GET['ret_errormsg']
+            ipayment_data['addr_name'] = request.GET['addr_name']
 
         # Fill the form content
         if settings.IPAYMENT['useSessionId']:
             # sensible data is send to IPayment in a separate SOAP call
-            ipaymentData['ipayment_session_id'] = self.getSessionID(request, order)
-            form = SessionIPaymentForm(ipaymentData)
+            ipayment_data['ipayment_session_id'] = self.getSessionID(request, order)
+            form = SessionIPaymentForm(ipayment_data)
         else:
             # sensible data is send using this form, but signed to detect manipulation attempts
-            ipaymentData.update(self.getSessionlessContext(request, order))
-            ipaymentData['trx_securityhash'] = self.calcTrxSecurityHash(ipaymentData)
-            form = SensibleIPaymentForm(ipaymentData)
-        rc = RequestContext(request, { 'form': form, 'extra': extra, })
-        return render_to_response("payment.html", rc)
+            ipayment_data.update(self._get_sessionless_context(request, order))
+            ipayment_data['trx_securityhash'] = self.calcTrxSecurityHash(ipayment_data)
+            form = SensibleIPaymentForm(ipayment_data)
+        return RequestContext(request, { 'ipayment_form': form, 'ipayment_meta': meta })
 
-    def getHiddenContext(self, order):
+    def _get_hidden_context(self, order):
         return {
             'silent': 1,
             'shopper_id': self.shop.get_order_unique_id(order),
@@ -90,7 +96,7 @@ class OffsiteIPaymentBackend(object):
             'error_lang': 'en', # TODO: determine this value from language settings
         }
 
-    def getSessionlessContext(self, request, order):
+    def _get_sessionless_context(self, request, order):
         processorUrls = self.getProcessorURLs(request)
         return {
             'trxuser_id': settings.IPAYMENT['trxUserId'],
