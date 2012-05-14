@@ -56,6 +56,7 @@ else
 	# the default case...
 	pushd .
 	cd tests/testapp
+	echo python manage.py test --liveserver=$liveserver $suite
 	python manage.py test --liveserver=$liveserver $suite
 	popd
 fi
