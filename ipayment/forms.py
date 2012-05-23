@@ -20,10 +20,10 @@ class AbstractIPaymentForm(forms.Form):
     Form used to transfer customer data from a shop template to IPayment via Silent-CGI.
     """
     shopper_id = forms.IntegerField(widget=forms.HiddenInput)
-    advanced_strict_id_check = forms.IntegerField(widget=forms.HiddenInput)
+    advanced_strict_id_check = forms.IntegerField(widget=forms.HiddenInput, initial=1)
     invoice_text = forms.CharField(widget=forms.HiddenInput)
-    error_lang = forms.CharField(widget=forms.HiddenInput)
-    silent = forms.IntegerField(widget=forms.HiddenInput)
+    error_lang = forms.CharField(widget=forms.HiddenInput, initial='en')
+    silent = forms.IntegerField(widget=forms.HiddenInput, initial=1)
     addr_name = forms.CharField(label=_('Cardholder name'))
     cc_number = forms.CharField(label=_('Credit card number'))
     cc_checkcode = forms.CharField(label=_('Check code'))
