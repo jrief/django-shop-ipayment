@@ -22,8 +22,8 @@ class OffsiteIPaymentBackend(object):
     '''
     Glue code to let django-SHOP talk to the ipayment backend.
     '''
-    backend_name = "IPayment"
-    url_namespace = "ipayment"
+    backend_name = 'IPayment'
+    url_namespace = 'ipayment'
     ALLOWED_CONFIRMERS = ('212.227.34.218', '212.227.34.219', '212.227.34.220')
     
     #===========================================================================
@@ -164,7 +164,7 @@ class OffsiteIPaymentBackend(object):
             if request.GET['ret_status'] != 'SUCCESS':
                 return HttpResponseRedirect(self.shop.get_cancel_url())
             confirmation = Confirmation.objects.filter(shopper_id=shopper_id)
-            if confirmation.count() != 1:
+            if confirmation.count() == 0:
                 raise SuspiciousOperation('Redirect by IPayment rejected: '
                     'No order confirmation found for shopper_id %s.' % shopper_id)
             return HttpResponseRedirect(self.shop.get_finished_url())
