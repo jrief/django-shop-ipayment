@@ -156,7 +156,8 @@ class OffsiteIPaymentBackend(object):
         the confirmation of the payment is always available here.
         """
         if request.method != 'GET':
-            return HttpResponseBadRequest()
+            return HttpResponseBadRequest('Request method %s not allowed here' %
+                                          request.method)
         try:
             shopper_id = int(request.GET['shopper_id'])
             self.logger.info('IPayment for order %s redirected client with status %s',
