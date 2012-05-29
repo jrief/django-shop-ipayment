@@ -1,5 +1,5 @@
 # Django settings for example project.
-
+import socket
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
@@ -39,7 +39,7 @@ LANGUAGE_CODE = 'en-us'
 SITE_ID = 1
 
 # The hostname of this testing server visible to the outside world
-HOST_NAME = 'ipayment.netguru.de'
+HOST_NAME = socket.gethostname()
 
 # If you set this to False, Django will make some optimizations so as not
 # to load the internationalization machinery.
@@ -86,7 +86,7 @@ MIDDLEWARE_CLASSES = [
 
 import django
 if django.VERSION[0] < 1 or django.VERSION[1] <4:
-    raise('Test requires Django-1.4')
+    raise('This test requires at least Django-1.4')
 
 ROOT_URLCONF = 'testapp.urls'
 
