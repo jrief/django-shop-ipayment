@@ -1,5 +1,6 @@
 #-*- coding: utf-8 -*-
 from datetime import datetime
+from decimal import Decimal
 from suds.client import Client
 import hashlib
 import logging
@@ -194,12 +195,16 @@ class OffsiteIPaymentBackend(object):
                 self.checkOriginatingIP(request)
             post = request.POST.copy()
             if post.has_key('trx_amount'):
-                post['trx_amount'] = float(post['trx_amount'])/100.0
+                post['trx_amount'] = (Decimal(post['trx_amount'])/Decimal('100')) \
+                                                    .quantize(Decimal('0.00'))
             if post.has_key('ret_transdate') and post.has_key('ret_transtime'):
-                post['ret_transdatetime'] = datetime.strptime(post['ret_transdate']+" "+post['ret_transtime'], "%d.%m.%y %H:%M:%S")
+                post['ret_transdatetime'] = datetime.strptime(
+                    post['ret_transdate']+' '+post['ret_transtime'],
+                    '%d.%m.%y %H:%M:%S')
             confirmation = ConfirmationForm(post)
             if not confirmation.is_valid():
-                raise SuspiciousOperation('Confirmation by IPayment rejected: POST data does not contain all expected fields.')
+                raise SuspiciousOperation('Confirmation by IPayment rejected: '
+                            'POST data does not contain all expected fields.')
             if not settings.IPAYMENT['useSessionId']:
                 self.checkRetParamHash(request.POST)
             confirmation.save()
