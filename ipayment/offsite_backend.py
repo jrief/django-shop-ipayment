@@ -39,7 +39,7 @@ class OffsiteIPaymentBackend(object):
         assert settings.IPAYMENT['useSessionId'] or \
             settings.IPAYMENT.has_key('securityKey') and len(settings.IPAYMENT['securityKey'])>=6, \
             "In IPAYMENT, useSessionId must be True, or a securityKey must contain at least 6 characters" 
-        
+
     def get_urls(self):
         urlpatterns = patterns('',
             url(r'^$', self.view_that_asks_for_money, name='ipayment'),
@@ -48,11 +48,11 @@ class OffsiteIPaymentBackend(object):
             url(r'^error$', self.view_that_asks_for_money, name='ipayment_error'),
         )
         return urlpatterns
-    
+
     #===========================================================================
     # Views
     #===========================================================================
-    
+
     def view_that_asks_for_money(self, request):
         '''
         Show this form to ask for the customers credit cards content. This
@@ -79,12 +79,12 @@ class OffsiteIPaymentBackend(object):
         # Fill the form content
         if settings.IPAYMENT['useSessionId']:
             # sensible data is send to IPayment in a separate SOAP call
-            ipayment_data['ipayment_session_id'] = self.getSessionID(request, order)
+            ipayment_data['ipayment_session_id'] = self._get_session_id(request, order)
             form = SessionIPaymentForm(ipayment_data)
         else:
             # sensible data is send using this form, but signed to detect manipulation attempts
             ipayment_data.update(self._get_sessionless_context(request, order))
-            ipayment_data['trx_securityhash'] = self.calcTrxSecurityHash(ipayment_data)
+            ipayment_data['trx_securityhash'] = self._calc_trx_security_hash(ipayment_data)
             form = SensibleIPaymentForm(ipayment_data)
         return RequestContext(request, { 'ipayment_form': form, 'ipayment_meta': meta })
 
@@ -98,7 +98,7 @@ class OffsiteIPaymentBackend(object):
         }
 
     def _get_sessionless_context(self, request, order):
-        processorUrls = self.getProcessorURLs(request)
+        processorUrls = self._get_processor_urls(request)
         return {
             'trxuser_id': settings.IPAYMENT['trxUserId'],
             'trxpassword': settings.IPAYMENT['trxPassword'],
@@ -110,7 +110,7 @@ class OffsiteIPaymentBackend(object):
             'hidden_trigger_url': processorUrls['hiddenTriggerUrl'],
         }
 
-    def getSessionID(self, request, order):
+    def _get_session_id(self, request, order):
         """
         Create a SOAP call containing sensitive data, such as trxUserId and trxPassword and
         invoked directly at the IPayment's server returning a sessionID. Therefore these
@@ -130,13 +130,13 @@ class OffsiteIPaymentBackend(object):
             },
             'transactionType': settings.IPAYMENT['trxType'],
             'paymentType': settings.IPAYMENT['trxPaymentType'],
-            'processorUrls': self.getProcessorURLs(request)
+            'processorUrls': self._get_processor_urls(request)
         }
         result = soapClient.service.createSession(**sessionData)
         self.logger.debug('Created sessionID by SOAP call to IPayment: %s' % result.__str__())
         return result
 
-    def getProcessorURLs(self, request):
+    def _get_processor_urls(self, request):
             url_scheme = 'https://' if request.is_secure() else 'http://'
             url_domain = get_current_site(request).domain
             return {
@@ -148,7 +148,7 @@ class OffsiteIPaymentBackend(object):
     #===========================================================================
     # Handlers, which process GET redirects initiated by IPayment
     #===========================================================================
-    
+
     def ipayment_return_success_view(self, request):
         """
         The view the customer is redirected to from the IPayment server after a
@@ -179,12 +179,12 @@ class OffsiteIPaymentBackend(object):
     #===========================================================================
     # Handlers, which process POST data from IPayment
     #===========================================================================
-    
+
     @csrf_exempt
     def payment_was_successful(self, request):
         '''
         This listens to a confirmation sent by one of the IPayment servers.
-        Valid payments are commited as confirmed payments in their table.
+        Valid payments are commited as confirmed payments into their model.
         The intention of this view is not to display any useful information,
         since the HTTP-client is a server located at IPayment.
         '''
@@ -192,7 +192,7 @@ class OffsiteIPaymentBackend(object):
             return HttpResponseBadRequest()
         try:
             if settings.IPAYMENT['checkOriginatingIP']:
-                self.checkOriginatingIP(request)
+                self._check_originating_ipaddr(request)
             post = request.POST.copy()
             if post.has_key('trx_amount'):
                 post['trx_amount'] = (Decimal(post['trx_amount'])/Decimal('100')) \
@@ -206,7 +206,7 @@ class OffsiteIPaymentBackend(object):
                 raise SuspiciousOperation('Confirmation by IPayment rejected: '
                             'POST data does not contain all expected fields.')
             if not settings.IPAYMENT['useSessionId']:
-                self.checkRetParamHash(request.POST)
+                self._check_ret_param_hash(request.POST)
             confirmation.save()
             order = self.shop.get_order_for_id(confirmation.cleaned_data['shopper_id'])
             self.logger.info('IPayment for %s confirmed %s', order, 
@@ -222,10 +222,10 @@ class OffsiteIPaymentBackend(object):
             traceback.print_exc()
             return HttpResponseServerError('Internal error in ' + __name__)
 
-    def checkOriginatingIP(self, request):
+    def _check_originating_ipaddr(self, request):
         """
-        Check that the request is coming from a trusted source. A list of allowed
-        sources is hard coded into this module.
+        Check that the request is coming from a trusted source. A list of
+        allowed sources is hard coded into this module.
         If the software is operated behind a proxy, instead of using the remote
         IP address, the HTTP-header HTTP_X_FORWARDED_FOR is evaluated against
         the list of allowed sources.
@@ -251,7 +251,7 @@ class OffsiteIPaymentBackend(object):
         self.logger.debug('POST data received from IPayment[%s]: %s.' 
                           % (originating_ip, request.POST.__str__()))
 
-    def calcTrxSecurityHash(self, data):
+    def _calc_trx_security_hash(self, data):
         """
         POST data sent to IPayment can be signed using some parameters and our secretKey.
         Calculate this checksum and return it.
@@ -264,7 +264,7 @@ class OffsiteIPaymentBackend(object):
         md5.update(settings.IPAYMENT['securityKey'])
         return md5.hexdigest()
 
-    def checkRetParamHash(self, data):
+    def _check_ret_param_hash(self, data):
         """
         POST data sent by IPayment is signed using some reply parameters and our secretKey.
         Check if ret_param_checksum contains a feasible content.
