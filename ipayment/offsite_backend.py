@@ -69,7 +69,7 @@ class OffsiteIPaymentBackend(object):
 
     def get_context(self, request):
         order = self.shop.get_order(request)
-        ipayment_data = self._get_hidden_context(order)
+        ipayment_data = self.get_hidden_context(order)
         meta = { 'accountId': settings.IPAYMENT['accountId'], 'isError': False }
         if request.GET.has_key('ret_errorcode') and int(request.GET['ret_errorcode'])>0:
             meta['isError'] = True
@@ -79,16 +79,16 @@ class OffsiteIPaymentBackend(object):
         # Fill the form content
         if settings.IPAYMENT['useSessionId']:
             # sensible data is send to IPayment in a separate SOAP call
-            ipayment_data['ipayment_session_id'] = self._get_session_id(request, order)
+            ipayment_data['ipayment_session_id'] = self.get_session_id(request, order)
             form = SessionIPaymentForm(ipayment_data)
         else:
             # sensible data is send using this form, but signed to detect manipulation attempts
-            ipayment_data.update(self._get_sessionless_context(request, order))
+            ipayment_data.update(self.get_sessionless_context(request, order))
             ipayment_data['trx_securityhash'] = self._calc_trx_security_hash(ipayment_data)
             form = SensibleIPaymentForm(ipayment_data)
         return RequestContext(request, { 'ipayment_form': form, 'ipayment_meta': meta })
 
-    def _get_hidden_context(self, order):
+    def get_hidden_context(self, order):
         return {
             'silent': 1,
             'shopper_id': self.shop.get_order_unique_id(order),
@@ -97,8 +97,8 @@ class OffsiteIPaymentBackend(object):
             'error_lang': 'en', # TODO: determine this value from language settings
         }
 
-    def _get_sessionless_context(self, request, order):
-        processorUrls = self._get_processor_urls(request)
+    def get_sessionless_context(self, request, order):
+        processorUrls = self.get_processor_urls(request)
         return {
             'trxuser_id': settings.IPAYMENT['trxUserId'],
             'trxpassword': settings.IPAYMENT['trxPassword'],
@@ -110,7 +110,7 @@ class OffsiteIPaymentBackend(object):
             'hidden_trigger_url': processorUrls['hiddenTriggerUrl'],
         }
 
-    def _get_session_id(self, request, order):
+    def get_session_id(self, request, order):
         """
         Create a SOAP call containing sensitive data, such as trxUserId and trxPassword and
         invoked directly at the IPayment's server returning a sessionID. Therefore these
@@ -130,13 +130,13 @@ class OffsiteIPaymentBackend(object):
             },
             'transactionType': settings.IPAYMENT['trxType'],
             'paymentType': settings.IPAYMENT['trxPaymentType'],
-            'processorUrls': self._get_processor_urls(request)
+            'processorUrls': self.get_processor_urls(request)
         }
         result = soapClient.service.createSession(**sessionData)
         self.logger.debug('Created sessionID by SOAP call to IPayment: %s' % result.__str__())
         return result
 
-    def _get_processor_urls(self, request):
+    def get_processor_urls(self, request):
             url_scheme = 'https://' if request.is_secure() else 'http://'
             url_domain = get_current_site(request).domain
             return {
