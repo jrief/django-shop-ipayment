@@ -1,13 +1,13 @@
 {% load i18n %}
 
-<h1>{% trans "IPayment" %}</h1>
+<h1>IPayment</h1>
 
 {% if ipayment_meta.isError %}{{ ipayment_meta.errorMessage }}{% endif %}
 <form method="post" action="https://ipayment.de/merchant/{{ ipayment_meta.accountId }}/processor/2.0/">
 	{% for hidden in ipayment_form.hidden_fields %}{{ hidden }}{% endfor %}
 	{% trans "Cardholder name" %}: {{ ipayment_form.addr_name }}<br/>
 	{% trans "Credit card no." %}: <input type="text" name="cc_number" value="4012888888881881"><br/>
-	{% trans "Card Check Code" %}: <input type="text" name="cc_checkcode" value=""><br/>
-	{% trans "Card Expire date" %}: {{ ipayment_form.cc_expdate_month }} / {{ ipayment_form.cc_expdate_year }}<br/>
+	{% trans "Card check code" %}: <input type="text" name="cc_checkcode" value=""><br/>
+	{% trans "Card expire date" %}: {{ ipayment_form.cc_expdate_month }} / {{ ipayment_form.cc_expdate_year }}<br/>
 	<input type="submit" name="form_submit">
 </form>

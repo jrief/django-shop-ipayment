@@ -1,0 +1,130 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Jacob Rief <jacob.rief@gmail.com>, 2012.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2012-06-20 17:58+0200\n"
+"PO-Revision-Date: 2012-04-26 08:27\n"
+"Last-Translator:   <jacob.rief@gmail.com>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1)\n"
+
+#: admin.py:12
+msgid "Payment details"
+msgstr "Zahlungsdetails"
+
+#: admin.py:16
+msgid "Customer identification"
+msgstr "Kunden ID"
+
+#: admin.py:19
+msgid "Transaction information"
+msgstr "Transaktions ID"
+
+#: forms.py:9
+msgid "Jan"
+msgstr "Jan"
+
+#: forms.py:9
+msgid "Feb"
+msgstr "Feb"
+
+#: forms.py:9
+msgid "Mar"
+msgstr "Mär"
+
+#: forms.py:9
+msgid "Apr"
+msgstr "Apr"
+
+#: forms.py:10
+msgid "May"
+msgstr "Mai"
+
+#: forms.py:10
+msgid "Jun"
+msgstr "Jun"
+
+#: forms.py:10
+msgid "Jul"
+msgstr "Jul"
+
+#: forms.py:10
+msgid "Aug"
+msgstr "Aug"
+
+#: forms.py:11
+msgid "Sep"
+msgstr "Sep"
+
+#: forms.py:11
+msgid "Oct"
+msgstr "Okt"
+
+#: forms.py:11
+msgid "Nov"
+msgstr "Nov"
+
+#: forms.py:11
+msgid "Dec"
+msgstr "Dez"
+
+#: forms.py:27 models.py:26 templates/payment.html:8
+msgid "Cardholder name"
+msgstr "Kreditkarten Inhaber"
+
+#: forms.py:28
+msgid "Credit card number"
+msgstr "Kreditkarten Nummer"
+
+#: forms.py:29
+msgid "Check code"
+msgstr "Prüfcode"
+
+#: forms.py:30
+msgid "Card expire month"
+msgstr "Gültigkeit bis Monat"
+
+#: forms.py:31
+msgid "Card expire year"
+msgstr "Gültigkeit bis Jahr"
+
+#: models.py:11
+msgid "IPayment Confirmation"
+msgstr "IPayment Bestätigung"
+
+#: models.py:14
+msgid "Unique identifier for submitted payments"
+msgstr "Eindeutige ID für eingereichte Zahlungen"
+
+#: models.py:16
+msgid "Additional comments from the vendor"
+msgstr "Zusätzliche Anmerkung des Verkäufers"
+
+#: models.py:18
+msgid "IPayments internal booking number"
+msgstr "IPayments interne Buchungsnummer"
+
+#: models.py:24
+msgid "The clients IP address"
+msgstr "IP Adresse des Kunden"
+
+#: templates/payment.html:9
+msgid "Credit card no."
+msgstr "Kreditkarten-Nr."
+
+#: templates/payment.html:10
+msgid "Card check code"
+msgstr "Prüfcode"
+
+#: templates/payment.html:11
+msgid "Card expire date"
+msgstr "Karte gültig bis"

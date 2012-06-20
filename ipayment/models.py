@@ -23,7 +23,7 @@ class Confirmation(models.Model):
     ret_ip = models.IPAddressField(
         verbose_name=_('The clients IP address'))
     trx_typ = models.CharField(max_length=63)
-    addr_name = models.CharField(max_length=63, verbose_name='Cardholder name')
+    addr_name = models.CharField(max_length=63, verbose_name=_('Cardholder name'))
     trx_amount = CurrencyField()
     trx_remoteip_country = models.CharField(blank=True, max_length=2)
     trx_currency = models.CharField(max_length=4)
