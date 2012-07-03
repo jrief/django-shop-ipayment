@@ -26,6 +26,7 @@ setup(
     install_requires = [
         'Django>=1.3',
         'django-shop',
+        'suds',
     ],
     packages = find_packages(),
     include_package_data = True,
