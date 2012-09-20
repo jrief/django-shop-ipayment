@@ -30,15 +30,14 @@ class OffsiteIPaymentBackend(object):
     #===========================================================================
     # Defined by the backends API
     #===========================================================================
-    
+
     def __init__(self, shop):
         self.shop = shop
         self.logger = logging.getLogger(__name__)
-        assert type(settings.IPAYMENT).__name__=='dict', \
+        assert type(settings.IPAYMENT).__name__ == 'dict', \
             "You need to configure an IPAYMENT dictionary in settings"
-        assert settings.IPAYMENT['useSessionId'] or \
-            settings.IPAYMENT.has_key('securityKey') and len(settings.IPAYMENT['securityKey'])>=6, \
-            "In IPAYMENT, useSessionId must be True, or a securityKey must contain at least 6 characters" 
+        assert settings.IPAYMENT.get('useSessionId') or len(settings.IPAYMENT.get('securityKey', '')) >= 6, \
+            "In IPAYMENT, useSessionId must be True, or a securityKey must contain at least 6 characters"
 
     def get_urls(self):
         urlpatterns = patterns('',
@@ -71,7 +70,7 @@ class OffsiteIPaymentBackend(object):
         order = self.shop.get_order(request)
         ipayment_data = self.get_hidden_context(order)
         meta = { 'accountId': settings.IPAYMENT['accountId'], 'isError': False }
-        if request.GET.has_key('ret_errorcode') and int(request.GET['ret_errorcode'])>0:
+        if int(request.GET.get('ret_errorcode', 0)) > 0:
             meta['isError'] = True
             meta['errorMessage'] = request.GET['ret_errormsg']
             ipayment_data['addr_name'] = request.GET['addr_name']
@@ -194,12 +193,12 @@ class OffsiteIPaymentBackend(object):
             if settings.IPAYMENT['checkOriginatingIP']:
                 self._check_originating_ipaddr(request)
             post = request.POST.copy()
-            if post.has_key('trx_amount'):
-                post['trx_amount'] = (Decimal(post['trx_amount'])/Decimal('100')) \
+            if 'trx_amount' in post:
+                post['trx_amount'] = (Decimal(post['trx_amount']) / Decimal('100')) \
                                                     .quantize(Decimal('0.00'))
-            if post.has_key('ret_transdate') and post.has_key('ret_transtime'):
+            if 'ret_transdate' and 'ret_transtime' in post:
                 post['ret_transdatetime'] = datetime.strptime(
-                    post['ret_transdate']+' '+post['ret_transtime'],
+                    post['ret_transdate'] + ' ' + post['ret_transtime'],
                     '%d.%m.%y %H:%M:%S')
             confirmation = ConfirmationForm(post)
             if not confirmation.is_valid():
@@ -209,10 +208,10 @@ class OffsiteIPaymentBackend(object):
                 self._check_ret_param_hash(request.POST)
             confirmation.save()
             order = self.shop.get_order_for_id(confirmation.cleaned_data['shopper_id'])
-            self.logger.info('IPayment for %s confirmed %s', order, 
+            self.logger.info('IPayment for %s confirmed %s', order,
                              confirmation.cleaned_data['ret_status'])
             if confirmation.cleaned_data['ret_status'] == 'SUCCESS':
-                self.shop.confirm_payment(order, confirmation.cleaned_data['trx_amount'], 
+                self.shop.confirm_payment(order, confirmation.cleaned_data['trx_amount'],
                     confirmation.cleaned_data['ret_trx_number'], self.backend_name)
             return HttpResponse('OK')
         except Exception as exception:
@@ -233,7 +232,7 @@ class OffsiteIPaymentBackend(object):
         # TODO: use request.get_host()
         originating_ip = request.META['REMOTE_ADDR']
         if settings.IPAYMENT['reverseProxies'].count(originating_ip):
-            if request.META.has_key('HTTP_X_FORWARDED_FOR'):
+            if 'HTTP_X_FORWARDED_FOR' in request.META:
                 forged = True
                 for client in request.META['HTTP_X_FORWARDED_FOR'].split(','):
                     if self.ALLOWED_CONFIRMERS.count(client):
@@ -248,7 +247,7 @@ class OffsiteIPaymentBackend(object):
         elif not self.ALLOWED_CONFIRMERS.count(originating_ip):
             raise SuspiciousOperation('Request invoked from suspicious IP address %s'
                                       % originating_ip)
-        self.logger.debug('POST data received from IPayment[%s]: %s.' 
+        self.logger.debug('POST data received from IPayment[%s]: %s.'
                           % (originating_ip, request.POST.__str__()))
 
     def _calc_trx_security_hash(self, data):
@@ -269,7 +268,7 @@ class OffsiteIPaymentBackend(object):
         POST data sent by IPayment is signed using some reply parameters and our secretKey.
         Check if ret_param_checksum contains a feasible content.
         """
-        if not data.has_key('ret_param_checksum'):
+        if 'ret_param_checksum' not in data:
             raise SuspiciousOperation('POST data from IPayment does not contain expected parameter "ret_param_checksum"')
         md5 = hashlib.md5()
         md5.update(data['trxuser_id'].__str__())
