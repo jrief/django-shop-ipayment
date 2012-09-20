@@ -79,6 +79,12 @@ without the need of setting up an account at IPayment. If you register for
 IPayment, you get access to a configuration interface and other values
 will be assigned to your shop.
 
+For your reference, you can use the following test credit card numbers:
+* Visa Test Card: 4012888888881881
+* Master Test Card: 5105105105105100
+* The expiration date must be set to the present date or later.
+* As Credit Card Checkcode use any three digits.
+
 
 Testing
 =======
@@ -88,7 +94,7 @@ Therefore during testing make sure, that your testing environment is reachable
 from the Internet with a name resolvable by DNS. You might have to configure
 your firewall, so that your workstation is reachable on port 80.
 If you do not have a domain name which resolves onto your extrenal IP address,
-use a service such as http://www.gnudip.org/ 
+use a dynamic DNS service, as listed here http://dnslookup.me/dynamic-dns/.
 
 Set the host name of your environment in tests/testapp/settings.py::
 
