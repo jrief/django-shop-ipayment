@@ -12,14 +12,12 @@ MANAGERS = ADMINS
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql', # Add 'postgresql_psycopg2', 'postgresql', 'mysql', 'sqlite3' or 'oracle'.
-#        'NAME': 'test.sqlite',           # Or path to database file if using sqlite3.
-#        'USER': '',                      # Not used with sqlite3.
-        'NAME': 'test',           # Or path to database file if using sqlite3.
-        'USER': 'djangoshop',                      # Not used with sqlite3.
-        'PASSWORD': '',                  # Not used with sqlite3.
-        'HOST': 'localhost',                      # Set to empty string for localhost. Not used with sqlite3.
-        'PORT': '',                      # Set to empty string for default. Not used with sqlite3.
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': 'test.sqlite',
+        'USER': '',
+        'PASSWORD': '',
+        'HOST': '',
+        'PORT': '',
     }
 }
 
@@ -85,7 +83,7 @@ MIDDLEWARE_CLASSES = [
 ]
 
 import django
-if django.VERSION[0] < 1 or django.VERSION[1] <4:
+if django.VERSION[0] < 1 or django.VERSION[1] < 4:
     raise('This test requires at least Django-1.4')
 
 ROOT_URLCONF = 'testapp.urls'
@@ -106,16 +104,16 @@ INSTALLED_APPS = (
     'django.contrib.admin',
     # Uncomment the next line to enable admin documentation:
     'django.contrib.admindocs',
-    'polymorphic', # We need polymorphic installed for the shop
-    'shop', # The django SHOP application
+    'polymorphic',  # We need polymorphic installed for the shop
+    'shop',  # The django SHOP application
     'shop.addressmodel',
     'ipayment',
-    'project', # the test project application
+    'project',  # the test project application
 )
 
 # The shop settings:
-SHOP_CART_MODIFIERS= []
-SHOP_SHIPPING_BACKENDS=[]
+SHOP_CART_MODIFIERS = []
+SHOP_SHIPPING_BACKENDS = []
 
 # Shop module settings
 SHOP_SHIPPING_BACKENDS = (
@@ -127,36 +125,36 @@ SHOP_PAYMENT_BACKENDS = (
 )
 
 # Shop module settings
-SHOP_SHIPPING_FLAT_RATE = '10' # That's just for the flat rate shipping backend
+SHOP_SHIPPING_FLAT_RATE = '10'  # That's just for the flat rate shipping backend
 
 IPAYMENT_WITHOUT_SESSION = {
     'accountId': 99999,
     'trxUserId': 99998,
-    'trxType': 'preauth', # IPayment_Technik-Handbuch_2010-03.pdf (Seite 13-15)
+    'trxType': 'preauth',  # IPayment_Technik-Handbuch_2010-03.pdf (Seite 13-15)
     'trxPassword': '0',
-    'trxCurrency': 'EUR', 
-    'trxPaymentType': 'cc', # payment type: credit card
+    'trxCurrency': 'EUR',
+    'trxPaymentType': 'cc',  # payment type: credit card
     'adminActionPassword': '5cfgRT34xsdedtFLdfHxj7tfwx24fe',
     'useSessionId': False,
     'securityKey': 'testtest',
     'invoiceText': 'Example-Shop Invoice: %s',
     'checkOriginatingIP': True,
-    'reverseProxies': [ '127.0.0.1' ], # List of allowed reverse proxies
+    'reverseProxies': [ '127.0.0.1' ],  # List of allowed reverse proxies
 }
 
 IPAYMENT_WITH_SESSION = {
     'accountId': 99999,
     'trxUserId': 99999,
-    'trxType': 'preauth', # IPayment_Technik-Handbuch_2010-03.pdf (Seite 13-15)
+    'trxType': 'preauth',  # IPayment_Technik-Handbuch_2010-03.pdf (Seite 13-15)
     'trxPassword': '0',
-    'trxCurrency': 'EUR', 
-    'trxPaymentType': 'cc', # payment type: credit card
+    'trxCurrency': 'EUR',
+    'trxPaymentType': 'cc',  # payment type: credit card
     'adminActionPassword': '5cfgRT34xsdedtFLdfHxj7tfwx24fe',
     'useSessionId': True,
     'securityKey': 'testtest',
     'invoiceText': 'Example-Shop Invoice: %s',
     'checkOriginatingIP': True,
-    'reverseProxies': [ '127.0.0.1' ], # List of allowed reverse proxies
+    'reverseProxies': [ '127.0.0.1' ],  # List of allowed reverse proxies
 }
 
 IPAYMENT = IPAYMENT_WITHOUT_SESSION.copy()

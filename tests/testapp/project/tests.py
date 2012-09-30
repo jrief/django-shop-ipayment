@@ -7,13 +7,9 @@ from decimal import Decimal
 from django.contrib.sites.models import Site
 from django.test import LiveServerTestCase
 from django.test.client import Client, RequestFactory
-#from django.http import HttpResponseRedirect
 from django.conf import settings
 from django.core.urlresolvers import reverse, resolve
 from django.contrib.auth.models import User
-#from django.core.context_processors import csrf
-#from shop.models import Cart
-#from shop.views.checkout import CheckoutSelectionView
 from shop.util.cart import get_or_create_cart
 from shop.addressmodel.models import Country
 from shop.models.ordermodel import Order
@@ -96,14 +92,14 @@ class IPaymentTest(LiveServerTestCase):
         b) redirect the client to a given URL on this server
         Both actions shall result in the confirmation of the payment.
         """
-        post = self.ipayment_backend.getHiddenContext(self.order)
+        post = self.ipayment_backend.get_hidden_context(self.order)
         post['advanced_strict_id_check'] = 0  # disabled for testing only
         # (see ipayment_Technik-Handbuch.pdf page 32)
         if settings.IPAYMENT['useSessionId']:
-            post['ipayment_session_id'] = self.ipayment_backend.getSessionID(self.request, self.order)
+            post['ipayment_session_id'] = self.ipayment_backend.get_session_id(self.request, self.order)
         else:
-            post.update(self.ipayment_backend.getSessionlessContext(self.request, self.order))
-            post['trx_securityhash'] = self.ipayment_backend.calcTrxSecurityHash(post)
+            post.update(self.ipayment_backend.get_sessionless_context(self.request, self.order))
+            post['trx_securityhash'] = self.ipayment_backend._calc_trx_security_hash(post)
         post.update({
             'addr_name': 'John Doe',
             'cc_number': '4012888888881881',  # Visa test credit card number
