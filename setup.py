@@ -24,7 +24,7 @@ setup(
     keywords='django,django-shop,ipayment',
     classifiers = CLASSIFIERS,
     install_requires = [
-        'Django>=1.3',
+        'Django>=1.4',
         'django-shop',
         'suds',
     ],
