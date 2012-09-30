@@ -36,8 +36,9 @@ class OffsiteIPaymentBackend(object):
         self.logger = logging.getLogger(__name__)
         assert type(settings.IPAYMENT).__name__ == 'dict', \
             "You need to configure an IPAYMENT dictionary in settings"
-        assert settings.IPAYMENT.get('useSessionId') or len(settings.IPAYMENT.get('securityKey', '')) >= 6, \
-            "In IPAYMENT, useSessionId must be True, or a securityKey must contain at least 6 characters"
+        assert settings.IPAYMENT.get('useSessionId') \
+            or len(settings.IPAYMENT.get('securityKey', '')) >= 6, \
+            "Either 'useSessionId' must be True, or 'securityKey' must contain at least 6 characters"
 
     def get_urls(self):
         urlpatterns = patterns('',
@@ -137,12 +138,13 @@ class OffsiteIPaymentBackend(object):
         return result
 
     def get_processor_urls(self, request):
-            url_scheme = 'https://' if request.is_secure() else 'http://'
-            url_domain = get_current_site(request).domain
+            url = 'https://' if request.is_secure() else 'http://'
+            url += get_current_site(request).domain
+            self.logger.debug('Processor URL: %s' % url)
             return {
-                'redirectUrl': url_scheme + url_domain + reverse('ipayment_success'),
-                'silentErrorUrl': url_scheme + url_domain + reverse('ipayment_error'),
-                'hiddenTriggerUrl': url_scheme + url_domain + reverse('ipayment_hidden'),
+                'redirectUrl': url + reverse('ipayment_success'),
+                'silentErrorUrl': url + reverse('ipayment_error'),
+                'hiddenTriggerUrl': url + reverse('ipayment_hidden'),
             }
 
     #===========================================================================
