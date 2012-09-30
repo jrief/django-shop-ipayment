@@ -3,9 +3,10 @@ from django.utils.translation import ugettext_lazy as _
 from django.db import models
 from shop.util.fields import CurrencyField
 
+
 class Confirmation(models.Model):
     """
-    Model to store every confirmation for successful or failed payments. 
+    Model to store every confirmation for successful or failed payments.
     """
     class Meta:
         verbose_name = _('IPayment Confirmation')

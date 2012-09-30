@@ -3,6 +3,7 @@ import time
 import httplib
 import urllib
 import urlparse
+import random
 from decimal import Decimal
 from django.contrib.sites.models import Site
 from django.test import LiveServerTestCase
@@ -24,6 +25,7 @@ class IPaymentTest(LiveServerTestCase):
         current_site = Site.objects.get(id=settings.SITE_ID)
         current_site.domain = settings.HOST_NAME
         current_site.save()
+        self._create_fake_order()
         self.ipayment_backend = backends_pool.get_payment_backends_list()[0]
         self.factory = RequestFactory()
         self.request = Mock()
@@ -80,7 +82,6 @@ class IPaymentTest(LiveServerTestCase):
         self.assertEqual(resolve(urlobj.path).url_name, 'checkout_shipping')
         urlobj = urlparse.urlparse(response.redirect_chain[1][0])
         self.assertEqual(resolve(urlobj.path).url_name, 'flat')
-        #request = self.factory.get(reverse('ipayment'))
         self.order = self.ipayment_backend.shop.get_order(self.request)
 
     def _simulate_payment(self):
@@ -132,6 +133,15 @@ class IPaymentTest(LiveServerTestCase):
         self.assertEqual(order.status, Order.COMPLETED)
         confirmation = Confirmation.objects.get(pk=self.order.id)
         self.assertEqual(confirmation.ret_status, 'SUCCESS')
+
+    def _create_fake_order(self):
+        """
+        Create a fake order with a random order id, so that the following real
+        order does not start with 1. Otherwise this could cause errors if this
+        test is invoked multiple times.
+        """
+        order_id = random.randint(100001, 9999999)
+        Order.objects.create(id=order_id)
 
     def test_without_session(self):
         """
