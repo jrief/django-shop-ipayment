@@ -34,7 +34,7 @@ class IPaymentTest(LiveServerTestCase):
         setattr(self.request, 'session', {})
         setattr(self.request, 'is_secure', lambda: False)
         user = User.objects.create(username="test", email="test@example.com",
-            first_name="Test", last_name="Tester", 
+            first_name="Test", last_name="Tester",
             password="sha1$fc341$59561b971056b176e8ebf0b456d5eac47b49472b")
         setattr(self.request, 'user', user)
         self.country_usa = Country(name='USA')
@@ -45,7 +45,7 @@ class IPaymentTest(LiveServerTestCase):
         self._go_shopping()
 
     def tearDown(self):
-        time.sleep(10) # this keeps the server running for a while
+        time.sleep(10)  # this keeps the server running for a while
 
     def _create_cart(self):
         self.product = DiaryProduct(isbn='1234567890', number_of_pages=100)
@@ -60,7 +60,6 @@ class IPaymentTest(LiveServerTestCase):
         self.cart.save()
 
     def _go_shopping(self):
-
         # add address information
         post = {
             'ship-name': 'John Doe',
@@ -92,13 +91,13 @@ class IPaymentTest(LiveServerTestCase):
         """
         Simulate a payment to the IPayment processor.
         The full payment information is sent with method POST. Make sure your
-        test environment is reachable from the Internet. This test will 
+        test environment is reachable from the Internet. This test will
         a) invoke a POST request from IPayment to this server
-        b) redirecet the client to a given URL on this server
+        b) redirect the client to a given URL on this server
         Both actions shall result in the confirmation of the payment.
         """
         post = self.ipayment_backend.getHiddenContext(self.order)
-        post['advanced_strict_id_check'] = 0 # disabled for testing only 
+        post['advanced_strict_id_check'] = 0  # disabled for testing only
         # (see ipayment_Technik-Handbuch.pdf page 32)
         if settings.IPAYMENT['useSessionId']:
             post['ipayment_session_id'] = self.ipayment_backend.getSessionID(self.request, self.order)
@@ -107,7 +106,7 @@ class IPaymentTest(LiveServerTestCase):
             post['trx_securityhash'] = self.ipayment_backend.calcTrxSecurityHash(post)
         post.update({
             'addr_name': 'John Doe',
-            'cc_number': '4012888888881881', # Visa test credit card number
+            'cc_number': '4012888888881881',  # Visa test credit card number
             'cc_checkcode': '123',
             'cc_expdate_month': '12',
             'cc_expdate_year': '2029',
@@ -120,13 +119,13 @@ class IPaymentTest(LiveServerTestCase):
         conn = httplib.HTTPSConnection('ipayment.de')
         conn.request("POST", ipayment_uri, urllib.urlencode(post), headers)
         httpresp = conn.getresponse()
-        self.assertEqual(httpresp.status, 302, 'Expected to be redirected back from IPayment') 
+        self.assertEqual(httpresp.status, 302, 'Expected to be redirected back from IPayment')
         redir_url = urlparse.urlparse(httpresp.getheader('location'))
         query_params = urlparse.parse_qs(redir_url.query)
-        redir_uri = redir_url.path+'?'+redir_url.query
+        redir_uri = redir_url.path + '?' + redir_url.query
         conn.close()
-        self.assertEqual(query_params['ret_status'][0], 'SUCCESS', 'IPayment reported: '+redir_uri)
-        
+        self.assertEqual(query_params['ret_status'][0], 'SUCCESS', 'IPayment reported: ' + redir_uri)
+
         # IPayent redirected the customer onto 'redir_uri'. Continue to complete the order.
         response = self.client.get(redir_uri, follow=True)
         self.assertEqual(len(response.redirect_chain), 1, '')
