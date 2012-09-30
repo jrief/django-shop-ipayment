@@ -89,7 +89,9 @@ For your reference, you can use the following test credit card numbers:
 Testing
 =======
 
-Note that IPayment contacts your web-server in order to confirm payments.
+Compared to other unit tests, this test suite is rather tricky to setup. This
+module has to contact the servers of your PSP, which themselves contact your
+testing environment through http, in order to confirm the payment.
 Therefore during testing make sure, that your testing environment is reachable
 from the Internet with a name resolvable by DNS. You might have to configure
 your firewall, so that your workstation is reachable on port 80.
