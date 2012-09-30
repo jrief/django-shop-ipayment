@@ -26,7 +26,7 @@ class OffsiteIPaymentBackend(object):
     backend_name = 'IPayment'
     url_namespace = 'ipayment'
     ALLOWED_CONFIRMERS = ('212.227.34.218', '212.227.34.219', '212.227.34.220')
-    
+
     #===========================================================================
     # Defined by the backends API
     #===========================================================================
@@ -93,7 +93,7 @@ class OffsiteIPaymentBackend(object):
             'shopper_id': self.shop.get_order_unique_id(order),
             'advanced_strict_id_check': 1,
             'invoice_text': settings.IPAYMENT['invoiceText'] % self.shop.get_order_short_name(order),
-            'error_lang': 'en', # TODO: determine this value from language settings
+            'error_lang': 'en',  # TODO: determine this value from language settings
         }
 
     def get_sessionless_context(self, request, order):
@@ -101,7 +101,7 @@ class OffsiteIPaymentBackend(object):
         return {
             'trxuser_id': settings.IPAYMENT['trxUserId'],
             'trxpassword': settings.IPAYMENT['trxPassword'],
-            'trx_amount': int(self.shop.get_order_total(order)*100),
+            'trx_amount': int(self.shop.get_order_total(order) * 100),
             'trx_currency': settings.IPAYMENT['trxCurrency'],
             'trx_paymenttyp': settings.IPAYMENT['trxPaymentType'],
             'redirect_url': processorUrls['redirectUrl'],
@@ -111,20 +111,21 @@ class OffsiteIPaymentBackend(object):
 
     def get_session_id(self, request, order):
         """
-        Create a SOAP call containing sensitive data, such as trxUserId and trxPassword and
-        invoked directly at the IPayment's server returning a sessionID. Therefore these
-        sensitive fields have not to be displayed in the clients browser.  
+        Create a SOAP call containing sensitive data, such as trxUserId and
+        trxPassword and invoked directly at the IPayment's server returning a
+        sessionID. Therefore these sensitive fields have not to be displayed in
+        the clients browser.
         """
         soapClient = Client('https://ipayment.de/service/3.0/?wsdl')
         sessionData = {
-            'accountData': { 
+            'accountData': {
                 'accountId': settings.IPAYMENT['accountId'],
                 'trxuserId': settings.IPAYMENT['trxUserId'],
                 'trxpassword': settings.IPAYMENT['trxPassword'],
-                'adminactionpassword': settings.IPAYMENT['adminActionPassword'], 
+                'adminactionpassword': settings.IPAYMENT['adminActionPassword'],
             },
             'transactionData': {
-                'trxAmount': int(self.shop.get_order_total(order)*100),
+                'trxAmount': int(self.shop.get_order_total(order) * 100),
                 'trxCurrency': settings.IPAYMENT['trxCurrency'],
             },
             'transactionType': settings.IPAYMENT['trxType'],
