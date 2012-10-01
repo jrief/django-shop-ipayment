@@ -177,7 +177,7 @@ LOGGING = {
     'loggers': {
         'ipayment.offsite_backend': {
             'handlers': ['console'],
-            'level': 'DEBUG',
+            'level': 'INFO',
             'propagate': True,
         },
     }
