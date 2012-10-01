@@ -131,7 +131,7 @@ class IPaymentTest(LiveServerTestCase):
         self.assertEqual(response.status_code, 200)
         order = Order.objects.get(pk=self.order.id)
         self.assertEqual(order.status, Order.COMPLETED)
-        confirmation = Confirmation.objects.get(pk=self.order.id)
+        confirmation = Confirmation.objects.get(shopper_id=self.order.id)
         self.assertEqual(confirmation.ret_status, 'SUCCESS')
 
     def _create_fake_order(self):
@@ -140,8 +140,8 @@ class IPaymentTest(LiveServerTestCase):
         order does not start with 1. Otherwise this could cause errors if this
         test is invoked multiple times.
         """
-        order_id = random.randint(100001, 9999999)
-        Order.objects.create(id=order_id)
+        order_id = random.randint(100001, 999999)
+        Order.objects.create(id=order_id, status=Order.CANCELLED)
 
     def test_without_session(self):
         """
