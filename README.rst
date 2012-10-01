@@ -80,6 +80,7 @@ IPayment, you get access to a configuration interface and other values
 will be assigned to your shop.
 
 For your reference, you can use the following test credit card numbers:
+
 * Visa Test Card: 4012888888881881
 * Master Test Card: 5105105105105100
 * The expiration date must be set to the present date or later.
