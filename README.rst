@@ -141,7 +141,7 @@ support these.
 CHANGES
 =======
 
-0.0.6
+0.1.0
 All unit tests have been adopted and rechecked in a real environment.
 
 0.0.5
