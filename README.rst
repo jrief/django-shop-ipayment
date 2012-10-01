@@ -89,13 +89,14 @@ For your reference, you can use the following test credit card numbers:
 Testing
 =======
 
-Compared to other unit tests, this test suite is rather tricky to setup. This
-module has to contact the servers of your PSP, which themselves contact your
-testing environment through http, in order to confirm the payment.
+Compared to other unit tests, this test suite is rather tricky to setup. The
+reason for this is that the module has to contact the servers of your PSP, which
+themselves contact your testing environment through HTTP (to confirm the
+payment).
 Therefore during testing make sure, that your testing environment is reachable
 from the Internet with a name resolvable by DNS. You might have to configure
 your firewall, so that your workstation is reachable on port 80.
-If you do not have a domain name which resolves onto your extrenal IP address,
+If you do not have a domain name which resolves onto your external IP address,
 use a dynamic DNS service, as listed here http://dnslookup.me/dynamic-dns/.
 
 Set the host name of your environment in tests/testapp/settings.py::
@@ -103,7 +104,7 @@ Set the host name of your environment in tests/testapp/settings.py::
     HOST_NAME = 'ipayment.example.net'
 
 The unit test must start a web service which listens on port 80 of your testing
-environment. This feature is only available in Django-1.4 or greater. To run the
+environment. This feature is available in Django-1.4 or later. To run the
 test on its own, invoke::
 
    cd tests/testapp
@@ -114,11 +115,20 @@ If you run Django behind a proxy, such as Apache or nginx, run::
    cd tests/testapp
    python manage.py test --liveserver 127.0.0.1:8080
 
-These values depend on your testing environment.
+and change your proxy settings so, that incoming HTTP requests are passed
+through to 127.0.0.1:8080. These values of course depend on your testing
+environment.
 
 If you have trouble running these tests, try to reach the shop using a browser,
-while the test suite is running, which is about 20 seconds. The test suite has
-an artificial delay, because it has to wait for external events.
+while the test suite is running, which is about 20 seconds. This artificial
+delay is required to wait for all external events to have finished.
+
+Before repeating a test, wait at least one minute, since IPayment otherwise may
+reject the transaction with the message::
+
+    This transaction is currently already in process.
+    Do you have started the transaction twice?
+
 
 TODO
 ====
@@ -129,6 +139,9 @@ support these.
 
 CHANGES
 =======
+
+0.0.6
+All unit tests have been adopted and rechecked in a real environment.
 
 0.0.5
 Unit tests have been written to check for both kind of payment methods.
